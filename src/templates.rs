@@ -9,9 +9,9 @@ pub async fn index() -> Markup {
 
         body {
             header {
-                h1 { "test" }
+                h1 { "Strawberry Monitor" }
             }
-            p { "meow" }
+            p { "WIP" }
         }
     )
 }
