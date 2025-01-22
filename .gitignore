@@ -1,0 +1,7 @@
+.idea
+.code
+
+target/
+stbmon.sqlite
+Cargo.lock
+*.profraw
