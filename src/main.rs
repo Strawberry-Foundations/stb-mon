@@ -32,13 +32,7 @@ async fn main() -> anyhow::Result<()> {
     config::init_config(config_path)
         .await
         .context("Failed to initialize config")?;
-
-    dbg!(CONFIG
-        .get()
-        .unwrap()
-        .lock()
-        .await
-        .check_password("CHANGEME"));
+    
     let app = Router::new()
         .route("/", get(templates::index))
         .route("/api/add_monitor", post(routes::add_monitor_route))
