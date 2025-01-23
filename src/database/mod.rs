@@ -4,7 +4,8 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 
 pub mod monitor;
-pub mod records;
+pub mod record;
+pub mod session;
 
 static DATABASE_PATH: &'static str = "./stbmon.sqlite";
 pub static DATABASE: OnceLock<Arc<Mutex<Connection>>> = OnceLock::new();
@@ -21,7 +22,8 @@ pub fn initialize_database() -> anyhow::Result<()> {
         serviceDataMp BLOB NOT NULL,
         delayMins INTEGER NOT NULL,
         nextCheck INTEGER,
-        lastCheck INTEGER
+        lastCheck INTEGER,
+        enabled BOOLEAN DEFAULT 1
     )
     ",
         [],
@@ -34,6 +36,15 @@ pub fn initialize_database() -> anyhow::Result<()> {
         responseDeltaMs INTEGER,
         checkedAt INTEGER NOT NULL,
         info VARCHAR
+    );
+    ",
+        [],
+    )?;
+    database.execute(
+        r"
+    CREATE TABLE IF NOT EXISTS sessions (
+        token VARCHAR PRIMARY KEY,
+        expiresAt INTEGER
     );
     ",
         [],

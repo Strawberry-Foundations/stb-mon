@@ -1,2 +1,3 @@
 bind_addr = "0.0.0.0:13337"
 instance_name = "Strawberry Monitor"
+password_sha256 = "ba01338ba5fa0c1584a6d41f93fe550b1d715a8de2da10d6c673131a85658394" # CHANGEME

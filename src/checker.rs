@@ -4,7 +4,7 @@ use rusqlite::fallible_iterator::FallibleIterator;
 
 use crate::{
     database::{
-        records::{self, RecordResult},
+        record::{self, RecordResult},
         DATABASE,
     },
     monitor::{Monitor, MonitorResult},
@@ -47,11 +47,11 @@ pub async fn checker_thread() {
             let res = mon.run().await;
             let res = match res {
                 MonitorResult::Ok(response_time_ms, info) => {
-                    records::add_record(RecordResult::Ok, Some(response_time_ms as _), id, info)
+                    record::add_record(RecordResult::Ok, Some(response_time_ms as _), id, info)
                         .await
                 }
                 MonitorResult::UnexpectedResponse(response_time_ms, info) => {
-                    records::add_record(
+                    record::add_record(
                         RecordResult::Unexpected,
                         Some(response_time_ms as _),
                         id,
@@ -60,7 +60,7 @@ pub async fn checker_thread() {
                     .await
                 }
                 MonitorResult::ConnectionTimeout => {
-                    records::add_record(
+                    record::add_record(
                         RecordResult::Down,
                         None,
                         id,
@@ -69,7 +69,7 @@ pub async fn checker_thread() {
                     .await
                 }
                 MonitorResult::IoError(err) => {
-                    records::add_record(RecordResult::Err, None, id, err).await
+                    record::add_record(RecordResult::Err, None, id, err).await
                 }
             };
 

@@ -7,6 +7,7 @@ use axum::{extract::Query, http::StatusCode};
 
 use crate::monitor::tcp::TcpExpectedResponse;
 use crate::{database, monitor::Monitor};
+use crate::config::CONFIG;
 
 // Query q fields
 // ty: service type
@@ -20,7 +21,7 @@ use crate::{database, monitor::Monitor};
 //             ex: expected response as string of {0, 1, ?}, must be divisible by 8
 // to: timeout in seconds
 //
-pub async fn route_add_monitor(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
+pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
     let Some(Ok(delay_mins)) = q.get("del").map(|del| del.parse::<u16>()) else {
         return (
             StatusCode::BAD_REQUEST,
@@ -109,4 +110,25 @@ pub async fn route_add_monitor(q: Query<HashMap<String, String>>) -> (StatusCode
         }
     };
     (StatusCode::OK, "Monitor was added".to_string())
+}
+
+pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
+    let Some(password) = q.get("pw") else {
+        return (StatusCode::BAD_REQUEST, "missing param `pw` (password)".to_string());
+    };
+    if !CONFIG
+        .get()
+        .unwrap()
+        .lock()
+        .await
+        .check_password(password) {
+        return (StatusCode::UNAUTHORIZED, "wrong password".to_string())
+    };
+    
+    let token = match database::session::create_session().await {
+        Ok(token) => token,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to add session to database: {e}"))
+    };
+
+    (StatusCode::OK, token)
 }
