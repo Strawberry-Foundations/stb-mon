@@ -57,7 +57,12 @@ pub async fn tcp_service(
     let bytes = buf[..read].to_vec();
 
     if expected.is_empty() {
-        return MonitorResult::Ok(Instant::now().duration_since(start_time).as_millis(), format!("The service successfully established the connection and sent a response\n\nResponse hex: {bytes:x?}"));
+        return MonitorResult::Ok(
+            Instant::now().duration_since(start_time).as_millis(),
+            format!(
+                "The service successfully established the connection and sent a response\n\nResponse hex: {bytes:x?}"
+            ),
+        );
     }
 
     todo!("Response hex pattern checking");

@@ -1,13 +1,28 @@
 use anyhow::{anyhow, bail};
+use axum::http::header::CONTENT_TYPE;
+use axum::http::{HeaderMap, HeaderName, HeaderValue};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::{net::SocketAddr, time::Duration};
 
 use axum::{extract::Query, http::StatusCode};
 
+use crate::config::CONFIG;
 use crate::monitor::tcp::TcpExpectedResponse;
 use crate::{database, monitor::Monitor};
-use crate::config::CONFIG;
+
+pub async fn favicon_route() -> (HeaderMap, Vec<u8>) {
+    let hm = HeaderMap::from_iter(vec![(
+        CONTENT_TYPE,
+        HeaderValue::from_str("image/png").unwrap(),
+    )]);
+    let img = include_bytes!("../static/favicon.ico");
+    (hm, img.to_vec())
+}
+
+pub async fn indexjs_route() -> String {
+    include_str!("../static/index.js").to_string()
+}
 
 // Query q fields
 // ty: service type
@@ -34,7 +49,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             return (
                 StatusCode::BAD_REQUEST,
                 "missing param `ty` (service type)".to_string(),
-            )
+            );
         }
         Some("tcp") => {
             let Some(Ok(socket_addr)) = q.get("socket_addr").map(|sa| SocketAddr::from_str(sa))
@@ -50,7 +65,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
                     return (
                         StatusCode::BAD_REQUEST,
                         "missing param `exre` (expected response)".to_string(),
-                    )
+                    );
                 }
                 Some("op") => TcpExpectedResponse::OpenPort,
                 Some("bits") => {
@@ -75,7 +90,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
                         StatusCode::BAD_REQUEST,
                         "bad param `exre` (expected response), must be one of: {op, bits}"
                             .to_string(),
-                    )
+                    );
                 }
             };
 
@@ -106,7 +121,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             return (
                 StatusCode::BAD_REQUEST,
                 "bad param `ty` (service type), must be one of: {tcp}".to_string(),
-            )
+            );
         }
     };
     (StatusCode::OK, "Monitor was added".to_string())
@@ -114,20 +129,23 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
 
 pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
     let Some(password) = q.get("pw") else {
-        return (StatusCode::BAD_REQUEST, "missing param `pw` (password)".to_string());
+        return (
+            StatusCode::BAD_REQUEST,
+            "missing param `pw` (password)".to_string(),
+        );
     };
-    if !CONFIG
-        .get()
-        .unwrap()
-        .lock()
-        .await
-        .check_password(password) {
-        return (StatusCode::UNAUTHORIZED, "wrong password".to_string())
+    if !CONFIG.get().unwrap().lock().await.check_password(password) {
+        return (StatusCode::UNAUTHORIZED, "wrong password".to_string());
     };
-    
+
     let token = match database::session::create_session().await {
         Ok(token) => token,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to add session to database: {e}"))
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to add session to database: {e}"),
+            );
+        }
     };
 
     (StatusCode::OK, token)

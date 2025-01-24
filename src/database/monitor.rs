@@ -9,7 +9,7 @@ pub async fn add_monitor(service_data: Monitor, delay_mins: u16) -> anyhow::Resu
     let service_data = rmp_serde::to_vec(&service_data)?;
     DATABASE
         .get()
-        .ok_or(anyhow::anyhow!("Database not initialized"))?
+        .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .execute(

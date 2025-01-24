@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.95"
 axum = "0.8.1"
+axum-extra = { version = "0.10.0", features = ["cookie"] }
 fastrand = "2.3.0"
 hex = "0.4.3"
 maud = { git = "https://github.com/lambda-fairy/maud", features = ["axum"] }

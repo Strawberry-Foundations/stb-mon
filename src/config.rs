@@ -5,7 +5,7 @@ use std::sync::{Arc, OnceLock};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::fs;
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::Mutex;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -13,6 +13,7 @@ pub struct Config {
     pub instance_name: String,
     #[serde(rename = "password_sha256")]
     pub password: String,
+    pub allow_guest: bool,
 }
 
 impl Config {

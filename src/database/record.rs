@@ -28,7 +28,9 @@ pub async fn add_record(
     monitor_id: i32,
     info: String,
 ) -> anyhow::Result<()> {
-    tracing::debug!("Adding record - result: {result:?} | response_time: {response_time:?} | monitor_id: {monitor_id} | info: {info}");
+    tracing::debug!(
+        "Adding record - result: {result:?} | response_time: {response_time:?} | monitor_id: {monitor_id} | info: {info}"
+    );
     let time = std::time::SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -36,7 +38,7 @@ pub async fn add_record(
 
     DATABASE
         .get()
-        .ok_or(anyhow::anyhow!("Database not initialized"))?
+        .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .execute(

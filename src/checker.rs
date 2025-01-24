@@ -4,8 +4,8 @@ use rusqlite::fallible_iterator::FallibleIterator;
 
 use crate::{
     database::{
-        record::{self, RecordResult},
         DATABASE,
+        record::{self, RecordResult},
     },
     monitor::{Monitor, MonitorResult},
 };
