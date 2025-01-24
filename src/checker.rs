@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use rusqlite::fallible_iterator::FallibleIterator;
 
-use crate::database::record::util_last_record_time;
 use crate::time_util::current_unix_time;
 use crate::{
     database::{

@@ -3,11 +3,11 @@ use rusqlite::params;
 
 use super::DATABASE;
 
-struct MonitorRecord {
-    time_checked: i32,
-    result: RecordResult,
+pub struct MonitorRecord {
+    pub time_checked: i32,
+    pub result: RecordResult,
     // None = timeout/error
-    response_time: Option<i32>,
+    pub response_time_ms: Option<i32>,
     pub monitor_id: i32,
     // Info about the result, depends on service and result type
     pub info: String,
@@ -20,6 +20,18 @@ pub enum RecordResult {
     Unexpected,
     Down,
     Err,
+}
+
+impl From<u8> for RecordResult {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => RecordResult::Ok,
+            1 => RecordResult::Unexpected,
+            2 => RecordResult::Down,
+            3 => RecordResult::Err,
+            _ => unreachable!()
+        }
+    }
 }
 
 pub async fn add(
@@ -45,15 +57,31 @@ pub async fn add(
     Ok(())
 }
 
-pub async fn util_last_record_time(mon_id: i32) -> anyhow::Result<u64> {
+pub async fn util_last_record(mon_id: i32) -> anyhow::Result<MonitorRecord> {
     Ok(DATABASE
         .get()
         .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .query_row(
-            "SELECT checkedAt FROM records WHERE monitorId = ? ORDER BY checkedAt DESC LIMIT 1",
+            "SELECT monitorId,result,responseDeltaMs,checkedAt,info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC LIMIT 1",
             [mon_id],
-            |r| r.get(0),
+            |r| {
+                let monitor_id: i32 = r.get(0).unwrap();
+                let result: u8 = r.get(1).unwrap();
+                let result = RecordResult::from(result);
+                let response_time_ms: Option<i32> = r.get(2).unwrap();
+                let time_checked: i32 = r.get(3).unwrap();
+                let info: String = r.get(4).unwrap();
+                
+                let rec = MonitorRecord {
+                    time_checked,
+                    result,
+                    response_time_ms,
+                    monitor_id,
+                    info
+                };
+                Ok(rec)
+            },
         )?)
 }

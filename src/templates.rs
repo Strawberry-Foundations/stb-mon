@@ -1,7 +1,7 @@
 use axum_extra::extract::CookieJar;
 use maud::{Markup, html};
 
-use crate::{config::CONFIG, database};
+use crate::{config::CONFIG, database::{self, record::RecordResult}};
 use maud::DOCTYPE;
 
 async fn render_monitor_list() -> Markup {
@@ -18,10 +18,21 @@ async fn render_monitor_list() -> Markup {
             } }
             tbody {
                 @for (id, mon) in mons {
-                    @let last_record = crate::database::record::util_last_record_time(id).await.unwrap();
+                    @let last_record = crate::database::record::util_last_record(id).await.unwrap();
                     td { (id) };
                     td { (mon.service_data.service_location_str()) };
-                    td { (crate::time_util::time_rel(last_record as i64)) };
+                    td {
+                        @let (msg, style) = match last_record.result {
+                            RecordResult::Ok => ("Up", "color: #6fff31"),
+                            RecordResult::Unexpected => ("UX", "color: #f48421"),
+                            RecordResult::Down => ("Down", "color: #cb0b0b"),
+                            RecordResult::Err => ("Err", "color #550505"),
+                        };
+                        (crate::time_util::time_rel(last_record.time_checked as i64))
+                        " ("
+                        span style=(style) { (msg) }
+                        ")"
+                    };
                     td { (mon.interval_mins) " min" };
                     td { (mon.enabled) };
                 }
