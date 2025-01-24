@@ -1,6 +1,6 @@
 use crate::database::DATABASE;
 use crate::time_util::current_unix_time;
-use anyhow::{Context, bail};
+use anyhow::bail;
 use rusqlite::params;
 use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
@@ -12,8 +12,6 @@ pub async fn create() -> anyhow::Result<String> {
     let hash = hex::encode(hasher.finalize());
     let expiry = current_unix_time() + 60 * 60 * 24 * 7; // token is valid for 7 days
     DATABASE
-        .get()
-        .context("Failed to get database")?
         .lock()
         .await
         .execute(
@@ -32,16 +30,11 @@ pub async fn is_valid(token: &str) -> anyhow::Result<bool> {
     let mut hasher = Sha256::new();
     hasher.update(&token);
     let hash = hex::encode(hasher.finalize());
-    match DATABASE
-        .get()
-        .context("Failed to get database")?
-        .lock()
-        .await
-        .query_row(
-            "SELECT token FROM sessions WHERE (token = ? AND expiresAt > ?)",
-            params![hash, current_unix_time()],
-            |_| Ok(()),
-        ) {
+    match DATABASE.lock().await.query_row(
+        "SELECT token FROM sessions WHERE (token = ? AND expiresAt > ?)",
+        params![hash, current_unix_time()],
+        |_| Ok(()),
+    ) {
         Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
         Err(e) => bail!(e),
         _ => {}

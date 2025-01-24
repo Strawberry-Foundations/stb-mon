@@ -1,7 +1,6 @@
 use std::env;
 
 use crate::config::CONFIG;
-use crate::database::initialize_database;
 use anyhow::Context;
 use axum::{
     Router,
@@ -20,9 +19,7 @@ mod time_util;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    initialize_database()?;
     tracing_subscriber::fmt::init();
-    tokio::spawn(checker_thread());
 
     let config_path = env::args()
         .nth(1)
@@ -46,9 +43,9 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
         .context("Failed to start web server")?;
-    axum::serve(listener, app.into_make_service())
-        .await
-        .unwrap();
-
+    
+    tokio::task::spawn(checker_thread());
+    axum::serve(listener, app.into_make_service()).await.unwrap();
+    
     Ok(())
 }

@@ -6,7 +6,7 @@ pub mod tcp;
 
 pub struct Monitor {
     pub service_data: MonitorData,
-    pub interval_mins: i32,
+    pub interval_mins: u64,
     pub enabled: bool,
 }
 

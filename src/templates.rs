@@ -1,7 +1,10 @@
 use axum_extra::extract::CookieJar;
 use maud::{Markup, html};
 
-use crate::{config::CONFIG, database::{self, record::RecordResult}};
+use crate::{
+    config::CONFIG,
+    database::{self, record::RecordResult},
+};
 use maud::DOCTYPE;
 
 async fn render_monitor_list() -> Markup {

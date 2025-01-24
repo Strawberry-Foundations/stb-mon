@@ -4,11 +4,11 @@ use rusqlite::params;
 use super::DATABASE;
 
 pub struct MonitorRecord {
-    pub time_checked: i32,
+    pub time_checked: u64,
     pub result: RecordResult,
     // None = timeout/error
-    pub response_time_ms: Option<i32>,
-    pub monitor_id: i32,
+    pub response_time_ms: Option<u64>,
+    pub monitor_id: u64,
     // Info about the result, depends on service and result type
     pub info: String,
 }
@@ -29,7 +29,7 @@ impl From<u8> for RecordResult {
             1 => RecordResult::Unexpected,
             2 => RecordResult::Down,
             3 => RecordResult::Err,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -37,7 +37,7 @@ impl From<u8> for RecordResult {
 pub async fn add(
     result: RecordResult, // None results are the ones created when a monitor is added
     response_time: Option<u64>,
-    monitor_id: i32,
+    monitor_id: u64,
     info: String,
 ) -> anyhow::Result<()> {
     tracing::debug!(
@@ -45,8 +45,6 @@ pub async fn add(
     );
 
     DATABASE
-        .get()
-        .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .execute(
@@ -57,23 +55,21 @@ pub async fn add(
     Ok(())
 }
 
-pub async fn util_last_record(mon_id: i32) -> anyhow::Result<MonitorRecord> {
+pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
     Ok(DATABASE
-        .get()
-        .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .query_row(
-            "SELECT monitorId,result,responseDeltaMs,checkedAt,info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC LIMIT 1",
+            "SELECT monitorId, result, responseDeltaMs, checkedAt, info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC LIMIT 1",
             [mon_id],
             |r| {
-                let monitor_id: i32 = r.get(0).unwrap();
+                let monitor_id: u64 = r.get(0).unwrap();
                 let result: u8 = r.get(1).unwrap();
                 let result = RecordResult::from(result);
-                let response_time_ms: Option<i32> = r.get(2).unwrap();
-                let time_checked: i32 = r.get(3).unwrap();
+                let response_time_ms: Option<u64> = r.get(2).unwrap();
+                let time_checked: u64 = r.get(3).unwrap();
                 let info: String = r.get(4).unwrap();
-                
+
                 let rec = MonitorRecord {
                     time_checked,
                     result,

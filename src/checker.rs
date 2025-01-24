@@ -1,52 +1,57 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use rusqlite::fallible_iterator::FallibleIterator;
 
 use crate::time_util::current_unix_time;
 use crate::{
+    database,
     database::{
         DATABASE,
         record::{self, RecordResult},
     },
-    monitor::{MonitorData, MonitorResult},
+    monitor::MonitorResult,
 };
 
 static CHECK_INTERVAL: Duration = Duration::from_secs(5);
 
-async fn get_pending_checks() -> Vec<(i32, MonitorData)> {
-    let lock = DATABASE.get().unwrap().lock().await;
+async fn get_records() -> Vec<(u64, u64)> {
+    let lock = DATABASE.lock().await;
     let mut stmt = lock
         .prepare(
-            /*
-            SELECT id,
-                   checkedAt
-            FROM monitors
-            INNER JOIN records ON records.monitorId = monitors.id
-              AND records.checkedAt =
-                (SELECT checkedAt
-                 FROM records
-                 WHERE id = monitors.id
-                 ORDER BY checkedAt DESC
-                 LIMIT 1)
-            WHERE checkedAt > ?
-            */
-            r"SELECT id, checkedAt FROM monitors INNER JOIN records ON records.monitorId = monitors.id AND records.checkedAt = (SELECT checkedAt FROM records WHERE id = monitors.id ORDER BY checkedAt DESC LIMIT 1) WHERE checkedAt > ?",
+            r"SELECT monitorId, MAX(checkedAt) as maxCheckedAt FROM records GROUP BY monitorId",
         )
         .unwrap();
 
-    stmt.query([current_unix_time()])
+    let last_records: Vec<(u64, u64)> = stmt
+        .query([])
         .unwrap()
         .map(|r| {
-            let id: i32 = r.get(0).unwrap();
-            let mp_bytes: Vec<u8> = r.get(1).unwrap();
-            let service_data = rmp_serde::from_slice::<MonitorData>(&mp_bytes).unwrap();
-            Ok((id, service_data))
+            let monitor_id: u64 = r.get(0).unwrap();
+            let checked_at: u64 = r.get(1).unwrap();
+
+            Ok((monitor_id, checked_at))
         })
         .collect()
-        .unwrap()
+        .unwrap();
+
+    last_records
 }
 
-pub async fn add_result(res: MonitorResult, mon_id: i32) -> anyhow::Result<()> {
+async fn run_pending_checks() {
+    let last_records = get_records().await;
+    let mons = database::monitor::get_all().await.unwrap();
+    let now = current_unix_time();
+    for (id, time) in last_records {
+        let mon = mons.get(&id).unwrap();
+        if time + 60 * mon.interval_mins < now {
+            let res = mon.service_data.run().await;
+            add_result(res, id).await.unwrap();
+        }
+    }
+}
+
+pub async fn add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
     match res {
         MonitorResult::Ok(response_time_ms, info) => {
             record::add(RecordResult::Ok, Some(response_time_ms as _), mon_id, info).await
@@ -76,17 +81,8 @@ pub async fn add_result(res: MonitorResult, mon_id: i32) -> anyhow::Result<()> {
 pub async fn checker_thread() {
     loop {
         tracing::debug!("Getting pending checks");
-        let mons = get_pending_checks().await;
-        for (id, mon) in mons {
-            tracing::info!("Running monitor {id}");
-            let res = mon.run().await;
-            let res = add_result(res, id).await;
+        run_pending_checks().await;
 
-            if let Err(e) = res {
-                tracing::error!("Failed to add result of monitor {id} to database: {e}");
-                continue; // monitor did not run, so we don't update the nextCheck of it
-            }
-        }
         tokio::time::sleep(CHECK_INTERVAL).await;
     }
 }
