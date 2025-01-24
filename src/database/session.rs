@@ -1,20 +1,16 @@
 use crate::database::DATABASE;
+use crate::time_util::current_unix_time;
 use anyhow::{Context, bail};
 use rusqlite::params;
 use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
-use std::time::UNIX_EPOCH;
 
-pub async fn create_session() -> anyhow::Result<String> {
+pub async fn create() -> anyhow::Result<String> {
     let token: String = repeat_with(fastrand::alphanumeric).take(12).collect();
     let mut hasher = Sha256::new();
     hasher.update(&token);
     let hash = hex::encode(hasher.finalize());
-    let expiry = std::time::SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        + 60 * 60 * 24 * 7; // token is valid for 7 days
+    let expiry = current_unix_time() + 60 * 60 * 24 * 7; // token is valid for 7 days
     DATABASE
         .get()
         .context("Failed to get database")?
@@ -28,7 +24,7 @@ pub async fn create_session() -> anyhow::Result<String> {
     Ok(token)
 }
 
-pub async fn is_valid_session(token: &str) -> anyhow::Result<bool> {
+pub async fn is_valid(token: &str) -> anyhow::Result<bool> {
     if token.len() != 12 {
         return Ok(false);
     }
@@ -36,10 +32,6 @@ pub async fn is_valid_session(token: &str) -> anyhow::Result<bool> {
     let mut hasher = Sha256::new();
     hasher.update(&token);
     let hash = hex::encode(hasher.finalize());
-    let time = std::time::SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
     match DATABASE
         .get()
         .context("Failed to get database")?
@@ -47,7 +39,7 @@ pub async fn is_valid_session(token: &str) -> anyhow::Result<bool> {
         .await
         .query_row(
             "SELECT token FROM sessions WHERE (token = ? AND expiresAt > ?)",
-            params![hash, time],
+            params![hash, current_unix_time()],
             |_| Ok(()),
         ) {
         Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),

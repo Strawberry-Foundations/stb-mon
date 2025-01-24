@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail};
 use axum::http::header::CONTENT_TYPE;
-use axum::http::{HeaderMap, HeaderName, HeaderValue};
+use axum::http::{HeaderMap, HeaderValue};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::{net::SocketAddr, time::Duration};
@@ -26,7 +26,7 @@ pub async fn indexjs_route() -> String {
 
 // Query q fields
 // ty: service type
-// del: check delay in minutes
+// in: check interval in minutes
 //
 // tcp query
 // sa: socket address (host:port)
@@ -37,10 +37,10 @@ pub async fn indexjs_route() -> String {
 // to: timeout in seconds
 //
 pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
-    let Some(Ok(delay_mins)) = q.get("del").map(|del| del.parse::<u16>()) else {
+    let Some(Ok(interval_mins)) = q.get("in").map(|del| del.parse::<u16>()) else {
         return (
             StatusCode::BAD_REQUEST,
-            "bad or missing `del` (check delay)".to_string(),
+            "bad or missing `in` (check interval)".to_string(),
         );
     };
 
@@ -52,8 +52,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             );
         }
         Some("tcp") => {
-            let Some(Ok(socket_addr)) = q.get("socket_addr").map(|sa| SocketAddr::from_str(sa))
-            else {
+            let Some(Ok(socket_addr)) = q.get("sa").map(|sa| SocketAddr::from_str(sa)) else {
                 return (
                     StatusCode::BAD_REQUEST,
                     "bad or missing `sa` (socket address)".to_string(),
@@ -94,20 +93,20 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
                 }
             };
 
-            let Some(Ok(timeout_s)) = q.get("del").map(|del| del.parse::<u16>()) else {
+            let Some(Ok(timeout_s)) = q.get("to").map(|del| del.parse::<u16>()) else {
                 return (
                     StatusCode::BAD_REQUEST,
                     "bad or missing `to` (timeout)".to_string(),
                 );
             };
 
-            if let Err(e) = database::monitor::add_monitor(
+            if let Err(e) = database::monitor::add(
                 Monitor::Tcp {
                     addr: socket_addr,
                     expected: expected_response,
                     timeout: Duration::from_secs(timeout_s as _),
                 },
-                delay_mins,
+                interval_mins,
             )
             .await
             {
@@ -138,7 +137,7 @@ pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusC
         return (StatusCode::UNAUTHORIZED, "wrong password".to_string());
     };
 
-    let token = match database::session::create_session().await {
+    let token = match database::session::create().await {
         Ok(token) => token,
         Err(e) => {
             return (

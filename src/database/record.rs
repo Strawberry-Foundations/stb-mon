@@ -1,5 +1,5 @@
+use crate::time_util::current_unix_time;
 use rusqlite::params;
-use std::time::UNIX_EPOCH;
 
 use super::DATABASE;
 
@@ -22,7 +22,7 @@ pub enum RecordResult {
     Err,
 }
 
-pub async fn add_record(
+pub async fn add(
     result: RecordResult,
     response_time: Option<u64>,
     monitor_id: i32,
@@ -31,10 +31,6 @@ pub async fn add_record(
     tracing::debug!(
         "Adding record - result: {result:?} | response_time: {response_time:?} | monitor_id: {monitor_id} | info: {info}"
     );
-    let time = std::time::SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
 
     DATABASE
         .get()
@@ -43,8 +39,21 @@ pub async fn add_record(
         .await
         .execute(
             "INSERT INTO records (monitorId, result, responseDeltaMs, checkedAt, info) VALUES (?, ?, ?, ?, ?)",
-            params![monitor_id, result as u8, response_time, time, info],
+            params![monitor_id, result as u8, response_time, current_unix_time(), info],
         )?;
 
     Ok(())
+}
+
+pub async fn util_last_record(mon_id: i32) -> anyhow::Result<u64> {
+    Ok(DATABASE
+        .get()
+        .ok_or(anyhow::anyhow!("Failed to get database"))?
+        .lock()
+        .await
+        .query_row(
+            "SELECT checkedAt FROM records WHERE id = ? ORDER BY checkedAt DESC LIMIT 1",
+            [mon_id],
+            |r| r.get(0),
+        )?)
 }

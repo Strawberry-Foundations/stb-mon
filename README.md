@@ -7,7 +7,7 @@ Strawberry Monitor is a simple uptime panel that allows you to monitor the uptim
 
 ## Terms
 - Monitor: a "task" which checks a service at a given interval
-- Delay: the minimum time between checks
+- Interval: the minimum time between checks
 - Check: the process of stbmon running a monitor and checking if it is up and if it responds like it should
 
 ## How to run

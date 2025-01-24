@@ -20,9 +20,7 @@ pub fn initialize_database() -> anyhow::Result<()> {
     CREATE TABLE IF NOT EXISTS monitors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         serviceDataMp BLOB NOT NULL,
-        delayMins INTEGER NOT NULL,
-        nextCheck INTEGER,
-        lastCheck INTEGER,
+        intervalMins INTEGER NOT NULL,
         enabled BOOLEAN DEFAULT 1
     )
     ",

@@ -1,11 +1,14 @@
+use anyhow::bail;
 use rusqlite::params;
 
 use crate::monitor::Monitor;
 
 use super::DATABASE;
 
-pub async fn add_monitor(service_data: Monitor, delay_mins: u16) -> anyhow::Result<()> {
-    tracing::debug!("Adding monitor - service_data: {service_data:?} | delay_mins: {delay_mins}");
+pub async fn add(service_data: Monitor, interval_mins: u16) -> anyhow::Result<()> {
+    tracing::debug!(
+        "Adding monitor - service_data: {service_data:?} | interval_mins: {interval_mins}"
+    );
     let service_data = rmp_serde::to_vec(&service_data)?;
     DATABASE
         .get()
@@ -13,8 +16,8 @@ pub async fn add_monitor(service_data: Monitor, delay_mins: u16) -> anyhow::Resu
         .lock()
         .await
         .execute(
-            "INSERT INTO monitors (serviceDataMp, delayMins) VALUES (?, ?)",
-            params![service_data, delay_mins],
+            "INSERT INTO monitors (serviceDataMp, intervalMins) VALUES (?, ?)",
+            params![service_data, interval_mins],
         )?;
 
     Ok(())
@@ -22,7 +25,7 @@ pub async fn add_monitor(service_data: Monitor, delay_mins: u16) -> anyhow::Resu
 
 // used for debugging
 #[allow(unused)]
-pub async fn get_monitor_data_by_id(id: i32) -> Option<Monitor> {
+pub async fn get_by_id(id: i32) -> Option<Monitor> {
     let lock = DATABASE.get()?.lock().await;
     let bytes: Vec<u8> = lock
         .query_row(

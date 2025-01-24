@@ -16,6 +16,7 @@ mod monitor;
 mod octet;
 mod routes;
 mod templates;
+mod time_util;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -34,9 +35,10 @@ async fn main() -> anyhow::Result<()> {
         .context("Failed to initialize config")?;
 
     let app = Router::new()
-        .route("/", get(templates::index))
+        .route("/", get(templates::index_template))
         .route("/favicon.ico", get(routes::favicon_route))
         .route("/index.js", get(routes::indexjs_route))
+        
         .route("/api/add_monitor", post(routes::add_monitor_route))
         .route("/api/create_session", post(routes::create_session_route));
 

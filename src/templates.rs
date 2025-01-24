@@ -4,10 +4,27 @@ use maud::{Markup, html};
 use crate::{config::CONFIG, database};
 use maud::DOCTYPE;
 
-pub async fn index(cookies: CookieJar) -> Markup {
+async fn render_monitor_list() -> Markup {
+    html!(
+        table {
+            caption { "Enabled monitors" }
+            thead { tr {
+                th scope="col" { "Service" };
+                th scope="col" { "Type" };
+                th scope="col" { "Last checked" };
+                th scope="col" { "Interval" };
+                th scope="col" { "Enabled" };
+            } }
+        }
+    )
+}
+
+pub async fn index_template(cookies: CookieJar) -> Markup {
     let is_logged_in = match cookies.get("token") {
         None => false,
-        Some(c) => database::session::is_valid_session(c.value()).await.unwrap_or(false),
+        Some(c) => database::session::is_valid(c.value())
+            .await
+            .unwrap_or(false),
     };
 
     if CONFIG.get().unwrap().lock().await.allow_guest {
@@ -33,7 +50,9 @@ pub async fn index(cookies: CookieJar) -> Markup {
                         }
                     };
                 }
-                p { "WIP" }
+                p {
+                    (render_monitor_list().await)
+                }
             }
         )
     } else {
