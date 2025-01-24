@@ -5,16 +5,27 @@ use crate::{config::CONFIG, database};
 use maud::DOCTYPE;
 
 async fn render_monitor_list() -> Markup {
+    let mons = database::monitor::get_all().await.unwrap();
     html!(
         table {
             caption { "Enabled monitors" }
             thead { tr {
+                th scope="col" { "ID" };
                 th scope="col" { "Service" };
-                th scope="col" { "Type" };
                 th scope="col" { "Last checked" };
                 th scope="col" { "Interval" };
                 th scope="col" { "Enabled" };
             } }
+            tbody {
+                @for (id, mon) in mons {
+                    @let last_record = crate::database::record::util_last_record_time(id).await.unwrap();
+                    td { (id) };
+                    td { (mon.service_data.service_location_str()) };
+                    td { (crate::time_util::time_rel(last_record as i64)) };
+                    td { (mon.interval_mins) " min" };
+                    td { (mon.enabled) };
+                }
+            }
         }
     )
 }

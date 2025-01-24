@@ -8,8 +8,9 @@ use std::{net::SocketAddr, time::Duration};
 use axum::{extract::Query, http::StatusCode};
 
 use crate::config::CONFIG;
+use crate::database::monitor::get_by_id;
 use crate::monitor::tcp::TcpExpectedResponse;
-use crate::{database, monitor::Monitor};
+use crate::{checker, database, monitor::MonitorData};
 
 pub async fn favicon_route() -> (HeaderMap, Vec<u8>) {
     let hm = HeaderMap::from_iter(vec![(
@@ -44,7 +45,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
         );
     };
 
-    match q.get("ty").map(|s| s.as_str()) {
+    let id = match q.get("ty").map(|s| s.as_str()) {
         None => {
             return (
                 StatusCode::BAD_REQUEST,
@@ -100,8 +101,8 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
                 );
             };
 
-            if let Err(e) = database::monitor::add(
-                Monitor::Tcp {
+            match database::monitor::add(
+                MonitorData::Tcp {
                     addr: socket_addr,
                     expected: expected_response,
                     timeout: Duration::from_secs(timeout_s as _),
@@ -110,10 +111,13 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             )
             .await
             {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to add monitor to database: {e}"),
-                );
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to add monitor to database: {e}"),
+                    );
+                }
+                Ok(id) => id,
             }
         }
         _ => {
@@ -123,6 +127,11 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             );
         }
     };
+
+    let mon = get_by_id(id).await.unwrap();
+    let res = mon.service_data.run().await;
+    checker::add_result(res, id).await.unwrap();
+
     (StatusCode::OK, "Monitor was added".to_string())
 }
 

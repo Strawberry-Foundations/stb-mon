@@ -38,7 +38,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/", get(templates::index_template))
         .route("/favicon.ico", get(routes::favicon_route))
         .route("/index.js", get(routes::indexjs_route))
-        
         .route("/api/add_monitor", post(routes::add_monitor_route))
         .route("/api/create_session", post(routes::create_session_route));
 

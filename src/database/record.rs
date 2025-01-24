@@ -23,7 +23,7 @@ pub enum RecordResult {
 }
 
 pub async fn add(
-    result: RecordResult,
+    result: RecordResult, // None results are the ones created when a monitor is added
     response_time: Option<u64>,
     monitor_id: i32,
     info: String,
@@ -45,14 +45,14 @@ pub async fn add(
     Ok(())
 }
 
-pub async fn util_last_record(mon_id: i32) -> anyhow::Result<u64> {
+pub async fn util_last_record_time(mon_id: i32) -> anyhow::Result<u64> {
     Ok(DATABASE
         .get()
         .ok_or(anyhow::anyhow!("Failed to get database"))?
         .lock()
         .await
         .query_row(
-            "SELECT checkedAt FROM records WHERE id = ? ORDER BY checkedAt DESC LIMIT 1",
+            "SELECT checkedAt FROM records WHERE monitorId = ? ORDER BY checkedAt DESC LIMIT 1",
             [mon_id],
             |r| r.get(0),
         )?)

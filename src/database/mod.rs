@@ -30,7 +30,7 @@ pub fn initialize_database() -> anyhow::Result<()> {
         r"
     CREATE TABLE IF NOT EXISTS records (
         monitorId INTEGER NOT NULL,
-        result INTEGER NOT NULL,
+        result INTEGER,
         responseDeltaMs INTEGER,
         checkedAt INTEGER NOT NULL,
         info VARCHAR

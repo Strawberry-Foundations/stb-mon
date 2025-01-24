@@ -2,23 +2,20 @@ use std::time::Duration;
 
 use rusqlite::fallible_iterator::FallibleIterator;
 
-use crate::database::record::util_last_record;
+use crate::database::record::util_last_record_time;
 use crate::time_util::current_unix_time;
 use crate::{
     database::{
         DATABASE,
         record::{self, RecordResult},
     },
-    monitor::{Monitor, MonitorResult},
+    monitor::{MonitorData, MonitorResult},
 };
 
 static CHECK_INTERVAL: Duration = Duration::from_secs(5);
 
-async fn get_pending_checks() -> Vec<(i32, Monitor)> {
-    let Some(db) = DATABASE.get() else {
-        return vec![];
-    };
-    let lock = db.lock().await;
+async fn get_pending_checks() -> Vec<(i32, MonitorData)> {
+    let lock = DATABASE.get().unwrap().lock().await;
     let mut stmt = lock
         .prepare(
             /*
@@ -43,7 +40,8 @@ async fn get_pending_checks() -> Vec<(i32, Monitor)> {
         .map(|r| {
             let id: i32 = r.get(0).unwrap();
             let mp_bytes: Vec<u8> = r.get(1).unwrap();
-            Ok((id, rmp_serde::from_slice::<Monitor>(&mp_bytes).unwrap()))
+            let service_data = rmp_serde::from_slice::<MonitorData>(&mp_bytes).unwrap();
+            Ok((id, service_data))
         })
         .collect()
         .unwrap()
@@ -61,7 +59,7 @@ pub async fn add_result(res: MonitorResult, mon_id: i32) -> anyhow::Result<()> {
                 mon_id,
                 info,
             )
-                .await
+            .await
         }
         MonitorResult::ConnectionTimeout => {
             record::add(
@@ -70,7 +68,7 @@ pub async fn add_result(res: MonitorResult, mon_id: i32) -> anyhow::Result<()> {
                 mon_id,
                 "The server did not reply within the timeout".to_string(),
             )
-                .await
+            .await
         }
         MonitorResult::IoError(err) => record::add(RecordResult::Err, None, mon_id, err).await,
     }

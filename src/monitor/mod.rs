@@ -4,8 +4,14 @@ use serde::{Deserialize, Serialize};
 
 pub mod tcp;
 
+pub struct Monitor {
+    pub service_data: MonitorData,
+    pub interval_mins: i32,
+    pub enabled: bool,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Monitor {
+pub enum MonitorData {
     Tcp {
         addr: SocketAddr,
         expected: tcp::TcpExpectedResponse,
@@ -25,12 +31,12 @@ pub enum MonitorResult {
     // The server did not send a response or the port is firewalled
     // Could also be caused by packet loss
     ConnectionTimeout,
-    // An I/O error occured while checking the service
+    // An I/O error occurred while checking the service
     // (error)
     IoError(String),
 }
 
-impl Monitor {
+impl MonitorData {
     // Running a service will execute the logic of the service and put its results into the database
     pub async fn run(&self) -> MonitorResult {
         match self {
@@ -39,6 +45,14 @@ impl Monitor {
                 expected,
                 timeout,
             } => tcp::tcp_service(addr, expected, *timeout).await,
+        }
+    }
+
+    pub fn service_location_str(&self) -> String {
+        match self {
+            Self::Tcp { addr, .. } => {
+                format!("tcp://{addr}")
+            }
         }
     }
 }
