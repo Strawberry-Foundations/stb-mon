@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/create_session", post(api::create_session_route));
 
     let bind_addr = CONFIG.get().unwrap().lock().await.bind_addr;
-    tracing::info!("Binding HTTP server to {bind_addr}");
+    tracing::info!("Binding HTTP server to http://{bind_addr}");
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
         .context("Failed to start web server")?;
