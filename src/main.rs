@@ -3,7 +3,8 @@ use std::env;
 use crate::config::CONFIG;
 use anyhow::Context;
 use axum::{
-    routing::{delete, get, post, put}, Router
+    Router,
+    routing::{delete, get, post, put},
 };
 use checker::checker_thread;
 

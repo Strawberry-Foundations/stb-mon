@@ -207,10 +207,13 @@ pub async fn toggle_monitor(id: Path<u64>, cookies: CookieJar) -> (StatusCode, S
     let new_status = match database::monitor::toggle(*id).await {
         Ok(true) => "enabled",
         Ok(false) => "disabled",
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to toggle monitor: {e}")),
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to toggle monitor: {e}"),
+            );
+        }
     };
-    
-
 
     (StatusCode::OK, format!("Monitor is now {new_status}"))
 }

@@ -105,17 +105,24 @@ pub async fn toggle(id: u64) -> anyhow::Result<bool> {
         Err(e) => bail!(e),
     };
 
-    DATABASE.lock().await.execute("UPDATE monitors SET enabled = ?", [!enabled])?;
+    DATABASE
+        .lock()
+        .await
+        .execute("UPDATE monitors SET enabled = ?", [!enabled])?;
 
     Ok(!enabled)
 }
 
 pub async fn get_enabled(id: u64) -> rusqlite::Result<bool> {
-    let enabled: bool = DATABASE.lock().await.query_row("SELECT enabled FROM monitors WHERE id = ?", [id], |r| {
-        let enabled: bool = r.get(0).unwrap();
+    let enabled: bool = DATABASE.lock().await.query_row(
+        "SELECT enabled FROM monitors WHERE id = ?",
+        [id],
+        |r| {
+            let enabled: bool = r.get(0).unwrap();
 
-        Ok(enabled)
-    })?;
+            Ok(enabled)
+        },
+    )?;
 
     Ok(enabled)
 }
