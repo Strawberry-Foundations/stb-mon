@@ -62,7 +62,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             let Some(Ok(socket_addr)) = q.get("sa").map(|sa| SocketAddr::from_str(sa)) else {
                 return (
                     StatusCode::BAD_REQUEST,
-                    "bad or missing `sa` (socket address)".to_string(),
+                    "bad or missing param `sa` (socket address)".to_string(),
                 );
             };
 
@@ -103,9 +103,16 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
             let Some(Ok(timeout_s)) = q.get("to").map(|del| del.parse::<u16>()) else {
                 return (
                     StatusCode::BAD_REQUEST,
-                    "bad or missing `to` (timeout)".to_string(),
+                    "bad or missing param `to` (timeout)".to_string(),
                 );
             };
+
+            if timeout_s < 1 || timeout_s > 60 {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "bad param `to` (timeout), must be within 1..60".to_string()
+                );
+            }
 
             match database::monitor::add(
                 MonitorData::Tcp {
