@@ -1,3 +1,4 @@
+use anyhow::bail;
 use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::params;
 use std::collections::HashMap;
@@ -57,7 +58,7 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
 
 pub async fn get_all() -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
-    let mut stmt = lock.prepare("SELECT id, serviceDataMp, intervalMins, enabled FROM monitors")?;
+    let mut stmt = lock.prepare("SELECT id, serviceDataMp, intervalMins, enabled FROM monitors WHERE enabled = 1")?;
     let res = stmt
         .query([])?
         .map(|r| {
@@ -78,4 +79,13 @@ pub async fn get_all() -> anyhow::Result<HashMap<u64, Monitor>> {
         .unwrap();
 
     Ok(res)
+}
+
+pub async fn util_delete_monitor(id: u64) -> anyhow::Result<()> {
+    let affected = DATABASE.lock().await.execute("DELETE FROM monitors WHERE id = ?", [id])?;
+    if affected == 0 {
+        bail!("No such monitor")
+    }
+    DATABASE.lock().await.execute("DELETE FROM records WHERE monitorId = ?", [id])?;
+    Ok(())
 }

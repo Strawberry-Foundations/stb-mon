@@ -77,6 +77,7 @@ pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
                     monitor_id,
                     info
                 };
+                
                 Ok(rec)
             },
         )?)

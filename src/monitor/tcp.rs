@@ -7,8 +7,6 @@ use tokio::{
     time::Instant,
 };
 
-use crate::octet::Octet;
-
 use super::MonitorResult;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,7 +15,7 @@ pub enum TcpExpectedResponse {
     OpenPort,
     // The server replies with specified bytes after sending the bytes
     // (bytes_sent, bytes_received)
-    Bits(Vec<u8>, Vec<Octet>),
+    Bits(Vec<u8>, String),
 }
 
 pub async fn tcp_service(

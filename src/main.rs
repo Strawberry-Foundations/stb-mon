@@ -3,8 +3,7 @@ use std::env;
 use crate::config::CONFIG;
 use anyhow::Context;
 use axum::{
-    Router,
-    routing::{get, post},
+    routing::{delete, get, post}, Router
 };
 use checker::checker_thread;
 
@@ -12,10 +11,10 @@ mod checker;
 mod config;
 mod database;
 mod monitor;
-mod octet;
 mod routes;
 mod templates;
 mod time_util;
+mod api;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -33,10 +32,13 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/", get(templates::index_template))
+        .route("/admin", get(templates::admin_template))
         .route("/favicon.ico", get(routes::favicon_route))
         .route("/index.js", get(routes::indexjs_route))
-        .route("/api/add_monitor", post(routes::add_monitor_route))
-        .route("/api/create_session", post(routes::create_session_route));
+        .route("/admin.js", get(routes::adminjs_route))
+        .route("/api/monitors/{id}", delete(api::delete_monitor_route))
+        .route("/api/add_monitor", post(api::add_monitor_route))
+        .route("/api/create_session", post(api::create_session_route));
 
     let bind_addr = CONFIG.get().unwrap().lock().await.bind_addr;
     tracing::info!("Binding HTTP server to {bind_addr}");
