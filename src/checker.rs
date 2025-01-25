@@ -1,17 +1,16 @@
-use std::collections::HashMap;
-use std::time::Duration;
-
-use rusqlite::fallible_iterator::FallibleIterator;
-
 use crate::time_util::current_unix_time;
 use crate::{
     database,
     database::{
-        DATABASE,
         record::{self, RecordResult},
+        DATABASE,
     },
     monitor::MonitorResult,
 };
+
+use rusqlite::fallible_iterator::FallibleIterator;
+use std::collections::HashMap;
+use std::time::Duration;
 
 static CHECK_INTERVAL: Duration = Duration::from_secs(5);
 
