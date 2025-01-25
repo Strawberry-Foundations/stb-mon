@@ -17,8 +17,8 @@ pub async fn favicon_route() -> (HeaderMap, Vec<u8>) {
         CONTENT_TYPE,
         HeaderValue::from_str("image/png").unwrap(),
     )]);
-    let img = include_bytes!("../static/favicon.ico");
-    (hm, img.to_vec())
+    let img = include_bytes!("../static/favicon.ico").to_vec();
+    (hm, img)
 }
 
 pub async fn indexjs_route() -> String {
@@ -155,6 +155,7 @@ pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusC
             "missing param `pw` (password)".to_string(),
         );
     };
+    
     if !CONFIG.get().unwrap().lock().await.check_password(password) {
         return (StatusCode::UNAUTHORIZED, "wrong password".to_string());
     };
