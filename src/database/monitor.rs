@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::params;
 use std::collections::HashMap;
@@ -83,7 +83,7 @@ pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>
     Ok(res)
 }
 
-pub async fn util_delete_monitor(id: u64) -> anyhow::Result<()> {
+pub async fn util_delete(id: u64) -> anyhow::Result<()> {
     let affected = DATABASE
         .lock()
         .await
@@ -96,4 +96,26 @@ pub async fn util_delete_monitor(id: u64) -> anyhow::Result<()> {
         .await
         .execute("DELETE FROM records WHERE monitorId = ?", [id])?;
     Ok(())
+}
+
+pub async fn toggle(id: u64) -> anyhow::Result<bool> {
+    let enabled = match get_enabled(id).await {
+        Ok(e) => e,
+        Err(rusqlite::Error::QueryReturnedNoRows) => bail!("No such monitor"),
+        Err(e) => bail!(e),
+    };
+
+    DATABASE.lock().await.execute("UPDATE monitors SET enabled = ?", [!enabled])?;
+
+    Ok(!enabled)
+}
+
+pub async fn get_enabled(id: u64) -> rusqlite::Result<bool> {
+    let enabled: bool = DATABASE.lock().await.query_row("SELECT enabled FROM monitors WHERE id = ?", [id], |r| {
+        let enabled: bool = r.get(0).unwrap();
+
+        Ok(enabled)
+    })?;
+
+    Ok(enabled)
 }

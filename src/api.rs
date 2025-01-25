@@ -138,7 +138,7 @@ pub async fn add_monitor_route(
     let res = mon.service_data.run().await;
     checker::add_result(res, id).await.unwrap();
 
-    (StatusCode::OK, "Monitor was added".to_string())
+    (StatusCode::CREATED, "Monitor was added".to_string())
 }
 
 pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusCode, String) {
@@ -180,7 +180,7 @@ pub async fn delete_monitor_route(id: Path<u64>, cookies: CookieJar) -> (StatusC
         );
     };
 
-    if let Err(e) = database::monitor::util_delete_monitor(*id).await {
+    if let Err(e) = database::monitor::util_delete(*id).await {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Failed to remove monitor: {e}"),
@@ -188,4 +188,29 @@ pub async fn delete_monitor_route(id: Path<u64>, cookies: CookieJar) -> (StatusC
     }
 
     (StatusCode::OK, "Monitor was deleted".to_string())
+}
+
+pub async fn toggle_monitor(id: Path<u64>, cookies: CookieJar) -> (StatusCode, String) {
+    let is_logged_in = match cookies.get("token") {
+        None => false,
+        Some(c) => database::session::is_valid(c.value())
+            .await
+            .unwrap_or(false),
+    };
+    if !is_logged_in {
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Unauthorized (set `token` cookie to log in)".to_string(),
+        );
+    };
+
+    let new_status = match database::monitor::toggle(*id).await {
+        Ok(true) => "enabled",
+        Ok(false) => "disabled",
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to toggle monitor: {e}")),
+    };
+    
+
+
+    (StatusCode::OK, format!("Monitor is now {new_status}"))
 }
