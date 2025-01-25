@@ -39,7 +39,7 @@ pub async fn add_monitor_route(
     if !is_logged_in {
         return (
             StatusCode::UNAUTHORIZED,
-            "Unauthorized (set token cookie to log in)".to_string(),
+            "Unauthorized (set `token` cookie to log in)".to_string(),
         );
     }
 

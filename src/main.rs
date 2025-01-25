@@ -3,8 +3,7 @@ use std::env;
 use crate::config::CONFIG;
 use anyhow::Context;
 use axum::{
-    Router,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put}, Router
 };
 use checker::checker_thread;
 
@@ -38,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/index.js", get(routes::indexjs_route))
         .route("/admin.js", get(routes::adminjs_route))
         .route("/api/monitors/{id}", delete(api::delete_monitor_route))
-        .route("/api/add_monitor", post(api::add_monitor_route))
+        .route("/api/monitors", put(api::add_monitor_route))
         .route("/api/create_session", post(api::create_session_route));
 
     let bind_addr = CONFIG.get().unwrap().lock().await.bind_addr;
