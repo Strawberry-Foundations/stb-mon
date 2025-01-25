@@ -1,6 +1,6 @@
 use axum::http::StatusCode;
 use axum_extra::extract::CookieJar;
-use maud::{html, Markup, PreEscaped};
+use maud::{Markup, PreEscaped, html};
 
 use crate::{
     config::CONFIG,
@@ -8,14 +8,16 @@ use crate::{
 };
 use maud::DOCTYPE;
 
-static NEWCSS: PreEscaped<&'static str> = PreEscaped(r#"
+static NEWCSS: PreEscaped<&'static str> = PreEscaped(
+    r#"
 <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
 <style>body { max-width: 65% }</style>
-"#);
+"#,
+);
 
 async fn render_monitor_list(admin: bool) -> Markup {
-    let mons = database::monitor::get_all().await.unwrap();
+    let mons = database::monitor::get_all(false).await.unwrap();
     html!(
         table {
             caption { "Enabled monitors" }
@@ -47,7 +49,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             }
 
                             @if let Some(time) = last_record.response_time_ms {
-                                " " (time) "ms" 
+                                " " (time) "ms"
                             }
                             ")";
                         };
@@ -143,7 +145,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
             }
         );
 
-        return (StatusCode::UNAUTHORIZED, render)
+        return (StatusCode::UNAUTHORIZED, render);
     }
 
     let render = html!(
@@ -164,5 +166,5 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         }
     );
 
-    return (StatusCode::OK, render)
+    return (StatusCode::OK, render);
 }

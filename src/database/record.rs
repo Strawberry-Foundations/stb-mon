@@ -77,7 +77,7 @@ pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
                     monitor_id,
                     info
                 };
-                
+                // meow to fix cargo fmt internal error
                 Ok(rec)
             },
         )?)

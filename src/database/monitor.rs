@@ -13,9 +13,7 @@ pub async fn add(service_data: MonitorData, interval_mins: u16) -> anyhow::Resul
         "Adding monitor - service_data: {service_data:?} | interval_mins: {interval_mins}"
     );
     let service_data = rmp_serde::to_vec(&service_data)?;
-    let db = DATABASE
-        .lock()
-        .await;
+    let db = DATABASE.lock().await;
     db.execute(
         "INSERT INTO monitors (serviceDataMp, intervalMins) VALUES (?, ?)",
         params![service_data, interval_mins],
@@ -56,9 +54,13 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
     Some(mon)
 }
 
-pub async fn get_all() -> anyhow::Result<HashMap<u64, Monitor>> {
+pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
-    let mut stmt = lock.prepare("SELECT id, serviceDataMp, intervalMins, enabled FROM monitors WHERE enabled = 1")?;
+    let mut stmt = lock.prepare(if enabled_only {
+        "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors WHERE enabled = 1"
+    } else {
+        "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors"
+    })?;
     let res = stmt
         .query([])?
         .map(|r| {
@@ -82,10 +84,16 @@ pub async fn get_all() -> anyhow::Result<HashMap<u64, Monitor>> {
 }
 
 pub async fn util_delete_monitor(id: u64) -> anyhow::Result<()> {
-    let affected = DATABASE.lock().await.execute("DELETE FROM monitors WHERE id = ?", [id])?;
+    let affected = DATABASE
+        .lock()
+        .await
+        .execute("DELETE FROM monitors WHERE id = ?", [id])?;
     if affected == 0 {
         bail!("No such monitor")
     }
-    DATABASE.lock().await.execute("DELETE FROM records WHERE monitorId = ?", [id])?;
+    DATABASE
+        .lock()
+        .await
+        .execute("DELETE FROM records WHERE monitorId = ?", [id])?;
     Ok(())
 }

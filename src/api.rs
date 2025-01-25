@@ -1,9 +1,17 @@
 use std::{collections::HashMap, net::SocketAddr, str::FromStr, time::Duration};
 
-use axum::{extract::{Path, Query}, http::StatusCode};
+use axum::{
+    extract::{Path, Query},
+    http::StatusCode,
+};
 use axum_extra::extract::CookieJar;
 
-use crate::{checker, config::CONFIG, database, monitor::{tcp::TcpExpectedResponse, MonitorData}};
+use crate::{
+    checker,
+    config::CONFIG,
+    database,
+    monitor::{MonitorData, tcp::TcpExpectedResponse},
+};
 
 // Query q fields
 // ty: service type
@@ -18,7 +26,10 @@ use crate::{checker, config::CONFIG, database, monitor::{tcp::TcpExpectedRespons
 //             ex: expected response as string of hex + ?, must be divisible by 2
 // to: timeout in seconds
 //
-pub async fn add_monitor_route(q: Query<HashMap<String, String>>, cookies: CookieJar) -> (StatusCode, String) {
+pub async fn add_monitor_route(
+    q: Query<HashMap<String, String>>,
+    cookies: CookieJar,
+) -> (StatusCode, String) {
     let is_logged_in = match cookies.get("token") {
         None => false,
         Some(c) => database::session::is_valid(c.value())
@@ -26,7 +37,10 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>, cookies: Cooki
             .unwrap_or(false),
     };
     if !is_logged_in {
-        return (StatusCode::UNAUTHORIZED, "Unauthorized (set token cookie to log in)".to_string());
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Unauthorized (set token cookie to log in)".to_string(),
+        );
     }
 
     let Some(Ok(interval_mins)) = q.get("in").map(|i: &String| i.parse::<u16>()) else {
@@ -36,10 +50,12 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>, cookies: Cooki
         );
     };
 
-    if interval_mins < 1 || interval_mins > 60 * 24 * 7 /* 7 days */ {
+    if interval_mins < 1 || interval_mins > 60 * 24 * 7
+    /* 7 days */
+    {
         return (
             StatusCode::BAD_REQUEST,
-            "bad param `ìn` (check interval), must be within 1..94080".to_string()
+            "bad param `ìn` (check interval), must be within 1..94080".to_string(),
         );
     }
     let id = match q.get("ty").map(|s| s.as_str()) {
@@ -87,7 +103,7 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>, cookies: Cooki
             if timeout_s < 1 || timeout_s > 60 {
                 return (
                     StatusCode::BAD_REQUEST,
-                    "bad param `to` (timeout), must be within 1..60".to_string()
+                    "bad param `to` (timeout), must be within 1..60".to_string(),
                 );
             }
 
@@ -132,7 +148,7 @@ pub async fn create_session_route(q: Query<HashMap<String, String>>) -> (StatusC
             "missing param `pw` (password)".to_string(),
         );
     };
-    
+
     if !CONFIG.get().unwrap().lock().await.check_password(password) {
         return (StatusCode::UNAUTHORIZED, "wrong password".to_string());
     };
@@ -158,11 +174,17 @@ pub async fn delete_monitor_route(id: Path<u64>, cookies: CookieJar) -> (StatusC
             .unwrap_or(false),
     };
     if !is_logged_in {
-        return (StatusCode::UNAUTHORIZED, "Unauthorized (set `token` cookie to log in)".to_string());
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Unauthorized (set `token` cookie to log in)".to_string(),
+        );
     };
 
     if let Err(e) = database::monitor::util_delete_monitor(*id).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to remove monitor: {e}"));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to remove monitor: {e}"),
+        );
     }
 
     (StatusCode::OK, "Monitor was deleted".to_string())

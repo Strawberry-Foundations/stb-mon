@@ -11,13 +11,10 @@ pub async fn create() -> anyhow::Result<String> {
     hasher.update(&token);
     let hash = hex::encode(hasher.finalize());
     let expiry = current_unix_time() + 60 * 60 * 24 * 7; // token is valid for 7 days
-    DATABASE
-        .lock()
-        .await
-        .execute(
-            "INSERT INTO sessions (token, expiresAt) VALUES (?, ?)",
-            params![hash, expiry],
-        )?;
+    DATABASE.lock().await.execute(
+        "INSERT INTO sessions (token, expiresAt) VALUES (?, ?)",
+        params![hash, expiry],
+    )?;
 
     Ok(token)
 }

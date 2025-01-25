@@ -17,4 +17,3 @@ pub async fn indexjs_route() -> String {
 pub async fn adminjs_route() -> String {
     include_str!("../static/admin.js").to_string()
 }
-

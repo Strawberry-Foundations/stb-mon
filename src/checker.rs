@@ -40,7 +40,7 @@ async fn get_records() -> HashMap<u64, u64> {
 
 async fn run_pending_checks() {
     let last_records = get_records().await;
-    let mons = database::monitor::get_all().await.unwrap();
+    let mons = database::monitor::get_all(true).await.unwrap();
     let now = current_unix_time();
     for (mon_id, mon) in mons {
         let last_record = last_records.get(&mon_id).unwrap();

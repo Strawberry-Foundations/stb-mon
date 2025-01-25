@@ -3,10 +3,12 @@ use std::env;
 use crate::config::CONFIG;
 use anyhow::Context;
 use axum::{
-    routing::{delete, get, post}, Router
+    Router,
+    routing::{delete, get, post},
 };
 use checker::checker_thread;
 
+mod api;
 mod checker;
 mod config;
 mod database;
@@ -14,7 +16,6 @@ mod monitor;
 mod routes;
 mod templates;
 mod time_util;
-mod api;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -45,9 +46,11 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
         .context("Failed to start web server")?;
-    
+
     tokio::task::spawn(checker_thread());
-    axum::serve(listener, app.into_make_service()).await.unwrap();
-    
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
+
     Ok(())
 }
