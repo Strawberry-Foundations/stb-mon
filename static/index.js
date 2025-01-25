@@ -16,5 +16,3 @@ async function onLogin() {
     document.cookie = `token=${token}; expiry=${date.toUTCString()}`;
     document.location.href = "/admin"
 }
-
-a
