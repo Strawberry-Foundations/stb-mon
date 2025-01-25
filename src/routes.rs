@@ -45,6 +45,12 @@ pub async fn add_monitor_route(q: Query<HashMap<String, String>>) -> (StatusCode
         );
     };
 
+    if interval_mins < 1 || interval_mins > 60 * 24 * 7 /* 7 days */ {
+        return (
+            StatusCode::BAD_REQUEST,
+            "bad param `ìn` (check interval), must be within 1..94080".to_string()
+        );
+    }
     let id = match q.get("ty").map(|s| s.as_str()) {
         None => {
             return (
