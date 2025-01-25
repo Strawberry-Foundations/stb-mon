@@ -55,7 +55,14 @@ async fn render_monitor_list(admin: bool) -> Markup {
                         };
                         td { (mon.interval_mins) " min" };
                         td { (mon.enabled) };
-                        @if admin { td { a href={"javascript:onDelete(" (id) ")"} { "Del" } } }
+                        @if admin { td {
+                            a href={ "javascript:onDelete(" (id) ")" } { "Del" };
+                            " "
+                            a href={ "javascript:onToggle(" (id) ")" } {
+                                @if mon.enabled { "Dis" }
+                                @else { "En" }
+                            }
+                        }}
                         td { a href={ "/monitor/" (id) } { "More" } }
                     }
                 }
