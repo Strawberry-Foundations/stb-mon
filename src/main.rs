@@ -38,12 +38,12 @@ async fn main() -> anyhow::Result<()> {
         .route("/index.js", get(routes::indexjs_route))
         .route("/admin.js", get(routes::adminjs_route))
         .route("/api/monitors/{id}", delete(api::delete_monitor_route))
-        .route("/api/monitors/toggle", put(api::toggle_monitor))
+        .route("/api/monitors/{id}/toggle", put(api::toggle_monitor))
         .route("/api/monitors", put(api::add_monitor_route))
         .route("/api/create_session", post(api::create_session_route));
 
     let bind_addr = CONFIG.get().unwrap().lock().await.bind_addr;
-    tracing::info!("Binding HTTP server to {bind_addr}");
+    tracing::info!("Binding HTTP server to http://{bind_addr}");
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
         .context("Failed to start web server")?;

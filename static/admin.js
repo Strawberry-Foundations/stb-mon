@@ -12,3 +12,8 @@ async function onDelete(id) {
 
     alert("Monitor was deleted");
 }
+
+async function onToggle(id) {
+    let res = await fetch(`/api/monitors/${id}/toggle`, { method: "PUT" });
+    alert(await res.text())
+}

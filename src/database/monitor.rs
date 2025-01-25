@@ -56,12 +56,16 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
 
 pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
-    let mut stmt = lock.prepare(if enabled_only {
-        "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors WHERE enabled = 1"
-    } else {
-        "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors"
-    })?;
-    let res = stmt
+    let mut stmt = lock.prepare(
+        &format!(
+            "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors {}",
+            if enabled_only {
+                "WHERE enabled = 1"
+            } else {
+                ""
+            }
+        ))?;
+    let res: HashMap<u64, Monitor> = stmt
         .query([])?
         .map(|r| {
             let id: u64 = r.get(0).unwrap();
@@ -79,7 +83,6 @@ pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>
         })
         .collect()
         .unwrap();
-
     Ok(res)
 }
 
@@ -108,7 +111,9 @@ pub async fn toggle(id: u64) -> anyhow::Result<bool> {
     DATABASE
         .lock()
         .await
-        .execute("UPDATE monitors SET enabled = ?", [!enabled])?;
+        .execute("UPDATE monitors SET enabled = ? WHERE id = ?", params![
+            !enabled, id
+        ])?;
 
     Ok(!enabled)
 }
