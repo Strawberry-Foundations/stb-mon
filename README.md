@@ -1,6 +1,6 @@
 <div align="center">
-<h1> 🍓 Strawberry Monitor (stbmon)</h1>
-<h3>A lightweight network service availability monitoring tool</h3>
+    <h1> 🍓 Strawberry Monitor (stbmon)</h1>
+    <h3>A lightweight network service availability monitoring tool</h3>
 </div>
 
 ## ⚠️ Development Status
