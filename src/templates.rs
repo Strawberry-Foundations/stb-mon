@@ -1,13 +1,12 @@
-use axum::http::StatusCode;
-use axum_extra::extract::CookieJar;
-use itertools::Itertools;
-use maud::{Markup, PreEscaped, html};
-
 use crate::{
     config::CONFIG,
     database::{self, record::RecordResult},
 };
-use maud::DOCTYPE;
+
+use axum::http::StatusCode;
+use axum_extra::extract::CookieJar;
+use itertools::Itertools;
+use maud::{DOCTYPE, html, Markup, PreEscaped};
 
 static NEWCSS: PreEscaped<&'static str> = PreEscaped(
     r#"
@@ -19,9 +18,10 @@ static NEWCSS: PreEscaped<&'static str> = PreEscaped(
 
 async fn render_monitor_list(admin: bool) -> Markup {
     let mons = database::monitor::get_all(false).await.unwrap();
-    let mons = mons.into_iter()
-    .sorted_by(|(i1, _), (i2, _)| i1.cmp(i2))
-    .sorted_by(|(_, m1), (_, m2)| m2.enabled.cmp(&m1.enabled));
+    let mons = mons
+        .into_iter()
+        .sorted_by(|(i1, _), (i2, _)| i1.cmp(i2))
+        .sorted_by(|(_, m1), (_, m2)| m2.enabled.cmp(&m1.enabled));
     html!(
         table {
             caption { "Enabled monitors" }
