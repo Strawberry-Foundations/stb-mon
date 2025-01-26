@@ -6,7 +6,7 @@ use crate::{
 use axum::http::StatusCode;
 use axum_extra::extract::CookieJar;
 use itertools::Itertools;
-use maud::{DOCTYPE, html, Markup, PreEscaped};
+use maud::{DOCTYPE, Markup, PreEscaped, html};
 
 static NEWCSS: PreEscaped<&'static str> = PreEscaped(
     r#"
@@ -38,7 +38,14 @@ async fn render_monitor_list(admin: bool) -> Markup {
                     tr {
                         @let last_record = crate::database::record::util_last_record(id).await.unwrap();
                         td { (id) };
-                        td { (mon.service_data.service_location_str()) };
+                        td {
+                            @let loc = mon.service_data.service_location_str();
+                            @if loc.len() < 32 { (loc) }
+                            @else {
+                                @let tloc = loc.split_at(30).0;
+                                span title=(loc) { (tloc) };
+                            }
+                        };
                         td {
                             @let (msg, color) = match last_record.result {
                                 RecordResult::Ok => ("Up", "#6fff31"),
@@ -48,7 +55,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             };
                             (crate::time_util::time_rel(last_record.time_checked as i64))
                             " ("
-                            span style={ "color: " (color) } {
+                            span title=(last_record.info) style={ "color: " (color) } {
                                 (msg)
                             }
 

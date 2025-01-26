@@ -5,12 +5,15 @@ use axum::{
     http::StatusCode,
 };
 use axum_extra::extract::CookieJar;
+use url::Url;
 
 use crate::{
     checker,
     config::CONFIG,
     database,
-    monitor::{MonitorData, tcp::TcpExpectedResponse},
+    monitor::{
+        MonitorData, http as http_mon, http::HttpExpectedResponse, tcp::TcpExpectedResponse,
+    },
 };
 
 // Query q fields
@@ -22,10 +25,17 @@ use crate::{
 // exre: expected response
 //       open port: op,
 //       bytes: bytes as hex
-//             sh: sent bytes as hex, must be even
-//             ex: expected response as string of hex + ?, must be divisible by 2
+//         sh: sent bytes as hex, must be even
+//         ex: expected response as string of hex + ?, must be divisible by 2
 // to: timeout in seconds
 //
+// http query
+// url: (http(s)://example.com(:port)/(path))
+// exre: expected response
+//       any: any response
+//       sc: response with status code
+//          co: status code range (200-299,301,404-410)
+// to: timeout in seconds
 pub async fn add_monitor_route(
     q: Query<HashMap<String, String>>,
     cookies: CookieJar,
@@ -74,15 +84,15 @@ pub async fn add_monitor_route(
             };
 
             let expected_response = match q.get("exre").map(|s| s.as_str()) {
+                Some("op") => TcpExpectedResponse::OpenPort,
+                Some("bits") => {
+                    todo!()
+                }
                 None => {
                     return (
                         StatusCode::BAD_REQUEST,
                         "missing param `exre` (expected response)".to_string(),
                     );
-                }
-                Some("op") => TcpExpectedResponse::OpenPort,
-                Some("bits") => {
-                    todo!()
                 }
                 _ => {
                     return (
@@ -126,10 +136,84 @@ pub async fn add_monitor_route(
                 Ok(id) => id,
             }
         }
+        Some("http") => {
+            let Some(Ok(url)) = q.get("url").map(|u| Url::parse(u)) else {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "bad param `url`, failed to parse valid url".to_string(),
+                );
+            };
+            let url = url.to_string();
+
+            let expected_response = match q.get("exre").map(|s| s.as_str()) {
+                Some("any") => HttpExpectedResponse::Any,
+                Some("sc") => {
+                    let Some(codes) = q.get("co") else {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "missing param `co` (status codes)".to_string(),
+                        );
+                    };
+                    if codes.len() > 48 {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "bad param `co` (status codes), must be at most 48 characters long"
+                                .to_string(),
+                        );
+                    }
+                    if let None = http_mon::parse_codes(codes) {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "bad param `co` (status codes), failed to parse".to_string(),
+                        );
+                    }
+                    HttpExpectedResponse::StatusCode(codes.to_string())
+                }
+                None => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        "missing param `exre` (expected response)".to_string(),
+                    );
+                }
+                _ => {
+                    return (
+                        StatusCode::BAD_GATEWAY,
+                        "bad param `exre` (expected response), must be one of {res, sc}"
+                            .to_string(),
+                    );
+                }
+            };
+
+            let Some(Ok(timeout_s)) = q.get("to").map(|to| to.parse::<u16>()) else {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "bad or missing param `to` (timeout)".to_string(),
+                );
+            };
+
+            match database::monitor::add(
+                MonitorData::Http {
+                    url,
+                    expected: expected_response,
+                    timeout: Duration::from_secs(timeout_s as _),
+                },
+                interval_mins,
+            )
+            .await
+            {
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to add monitor: {e}"),
+                    );
+                }
+                Ok(id) => id,
+            }
+        }
         _ => {
             return (
                 StatusCode::BAD_REQUEST,
-                "bad param `ty` (service type), must be one of: {tcp}".to_string(),
+                "bad param `ty` (service type), must be one of: {tcp, http}".to_string(),
             );
         }
     };
