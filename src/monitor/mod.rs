@@ -1,7 +1,6 @@
 use std::{net::SocketAddr, time::Duration};
 
 use http::HttpRequest;
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 pub mod http;

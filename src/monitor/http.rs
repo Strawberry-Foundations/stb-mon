@@ -1,9 +1,10 @@
 use std::{
-    collections::HashMap, str::FromStr, time::{Duration, Instant}
+    collections::HashMap,
+    time::{Duration, Instant},
 };
 
 use axum::http::{HeaderName, HeaderValue};
-use reqwest::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use super::MonitorResult;
@@ -175,7 +176,7 @@ pub async fn http_service(
                     res.bytes().await.map(|b| b.len()).unwrap_or_default()
                 ),
             );
-        },
+        }
         HttpExpectedResponse::StatusCode(codes) => {
             let codes = parse_codes(&codes).unwrap();
             let status = res.status();
@@ -207,7 +208,7 @@ pub async fn http_service(
             if code.is_some_and(|c| status.as_u16() != c) {
                 return MonitorResult::UnexpectedResponse(delta, info);
             }
-            
+
             if bytes != &res_bytes.to_vec() {
                 return MonitorResult::UnexpectedResponse(delta, info);
             }

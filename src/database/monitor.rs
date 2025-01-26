@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail};
+use anyhow::bail;
 use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::params;
 use std::collections::HashMap;

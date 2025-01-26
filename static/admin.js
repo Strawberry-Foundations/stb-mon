@@ -11,9 +11,11 @@ async function onDelete(id) {
     };
 
     alert("Monitor was deleted");
+    window.location.reload();
 }
 
 async function onToggle(id) {
     let res = await fetch(`/api/monitors/${id}/toggle`, { method: "PUT" });
     alert(await res.text())
+    window.location.reload();
 }
