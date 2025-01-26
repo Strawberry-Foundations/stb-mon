@@ -18,14 +18,15 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
     let mut codes = vec![];
     let parts = val.split(",");
     for part in parts {
-        let n_hypen = part.chars().filter(|c| *c == '-').count();
-        if n_hypen >= 2 {
+        let n_hyp = part.chars().filter(|c| *c == '-').count();
+        if n_hyp >= 2 {
             return None;
         }
-        if n_hypen == 0 {
+        if n_hyp == 0 {
             // single-status part
             if let Ok(n) = part.parse::<u16>() {
                 codes.push(StatusCode::from_u16(n));
+                continue;
             } else {
                 return None;
             }
@@ -163,9 +164,9 @@ pub async fn http_service(
         }
     };
 
+    let delta = Instant::now().duration_since(start_time).as_millis();
     match expected {
         HttpExpectedResponse::Any => {
-            let delta = Instant::now().duration_since(start_time).as_millis();
             return MonitorResult::Ok(
                 delta,
                 format!(
@@ -177,24 +178,41 @@ pub async fn http_service(
         },
         HttpExpectedResponse::StatusCode(codes) => {
             let codes = parse_codes(&codes).unwrap();
-            let delta = Instant::now().duration_since(start_time).as_millis();
+            let status = res.status();
+            let Ok(bytes) = res.bytes().await else {
+                return MonitorResult::IoError("Failed to parse response bytes".to_string());
+            };
+            let info = format!(
+                "Server replied with status {} and {} bytes",
+                status,
+                bytes.len(),
+            );
 
-            if codes.contains(&res.status()) {
-                return MonitorResult::Ok(delta, format!(
-                    "Server replied with status {} and {} bytes",
-                    &res.status(),
-                    res.bytes().await.map(|b| b.len()).unwrap_or_default()
-                ));
+            if codes.contains(&status) {
+                return MonitorResult::Ok(delta, info);
             } else {
-                return MonitorResult::UnexpectedResponse(delta, format!(
-                    "Server replied with status {} and {} bytes",
-                    &res.status(),
-                    res.bytes().await.map(|b| b.len()).unwrap_or_default()
-                ));
+                return MonitorResult::UnexpectedResponse(delta, info);
             }
         }
         HttpExpectedResponse::Response(code, bytes) => {
-            todo!()
+            let status = res.status();
+            let Ok(res_bytes) = res.bytes().await else {
+                return MonitorResult::IoError("Failed to parse response bytes".to_string());
+            };
+            let info = format!(
+                "Server replied with status {status} and {} bytes",
+                res_bytes.len(),
+            );
+
+            if code.is_some_and(|c| status.as_u16() != c) {
+                return MonitorResult::UnexpectedResponse(delta, info);
+            }
+            
+            if bytes != &res_bytes.to_vec() {
+                return MonitorResult::UnexpectedResponse(delta, info);
+            }
+
+            return MonitorResult::Ok(delta, info);
         }
     };
 }
