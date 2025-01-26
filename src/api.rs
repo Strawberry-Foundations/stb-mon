@@ -5,7 +5,7 @@ use axum::{
     http::StatusCode,
 };
 use axum_extra::extract::CookieJar;
-use base64::{prelude::BASE64_STANDARD, Engine};
+use base64::{Engine, prelude::BASE64_STANDARD};
 use url::Url;
 
 use crate::{
@@ -13,7 +13,9 @@ use crate::{
     config::CONFIG,
     database,
     monitor::{
-        http::{self as http_mon, HeaderHashMap, HttpExpectedResponse, HttpMethod, HttpRequest}, tcp::TcpExpectedResponse, MonitorData
+        MonitorData,
+        http::{self as http_mon, HeaderHashMap, HttpExpectedResponse, HttpMethod, HttpRequest},
+        tcp::TcpExpectedResponse,
     },
 };
 
@@ -209,15 +211,20 @@ pub async fn add_monitor_route(
             };
 
             let headers = if let Some(headers) = q.get("hds") {
-                return (StatusCode::IM_A_TEAPOT, "header map parameter is not yet implemented".to_string());
+                return (
+                    StatusCode::IM_A_TEAPOT,
+                    "header map parameter is not yet implemented".to_string(),
+                );
             } else {
                 HeaderHashMap::default()
             };
 
             let body = q.get("body").map(String::from).unwrap_or_default();
             let Ok(body) = BASE64_STANDARD.decode(body) else {
-                return (StatusCode::BAD_REQUEST, "bad param `body`, failed to decode base64".to_string());
-
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "bad param `body`, failed to decode base64".to_string(),
+                );
             };
 
             match database::monitor::add(
@@ -228,8 +235,8 @@ pub async fn add_monitor_route(
                     request: HttpRequest {
                         method,
                         headers,
-                        body
-                    }
+                        body,
+                    },
                 },
                 interval_mins,
             )

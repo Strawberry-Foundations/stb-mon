@@ -141,6 +141,6 @@ pub async fn http_service(
     timeout: Duration,
     request_data: &HttpRequest,
 ) -> MonitorResult {
-    // TODO: implement http service 
+    // TODO: implement http service
     MonitorResult::Ok(0, "this service type is not implemented".to_string())
 }
