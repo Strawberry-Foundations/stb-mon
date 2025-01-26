@@ -2,8 +2,8 @@ use crate::time_util::current_unix_time;
 use crate::{
     database,
     database::{
-        record::{self, RecordResult},
         DATABASE,
+        record::{self, RecordResult},
     },
     monitor::MonitorResult,
 };
@@ -42,7 +42,9 @@ async fn run_pending_checks() {
     let mons = database::monitor::get_all(true).await.unwrap();
     let now = current_unix_time();
     for (mon_id, mon) in mons {
-        let last_record = last_records.get(&mon_id).unwrap();
+        let Some(last_record) = last_records.get(&mon_id) else {
+            continue;
+        };
         if last_record + 60 * mon.interval_mins < now {
             let res = mon.service_data.run().await;
             add_result(res, mon_id).await.unwrap();
@@ -64,14 +66,14 @@ pub async fn add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
             )
             .await
         }
-        MonitorResult::ConnectionTimeout => {
-            record::add(
-                RecordResult::Down,
-                None,
-                mon_id,
-                "The server did not reply within the timeout".to_string(),
-            )
-            .await
+        MonitorResult::Down(is_conn_refused) => {
+            let info = if is_conn_refused {
+                "Server refused the connection"
+            } else {
+                "Server did not reply within the timeout"
+            }
+            .to_string();
+            record::add(RecordResult::Down, None, mon_id, info).await
         }
         MonitorResult::IoError(err) => record::add(RecordResult::Err, None, mon_id, err).await,
     }

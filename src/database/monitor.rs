@@ -56,15 +56,14 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
 
 pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
-    let mut stmt = lock.prepare(
-        &format!(
-            "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors {}",
-            if enabled_only {
-                "WHERE enabled = 1"
-            } else {
-                ""
-            }
-        ))?;
+    let mut stmt = lock.prepare(&format!(
+        "SELECT id, serviceDataMp, intervalMins, enabled FROM monitors {}",
+        if enabled_only {
+            "WHERE enabled = 1"
+        } else {
+            ""
+        }
+    ))?;
     let res: HashMap<u64, Monitor> = stmt
         .query([])?
         .map(|r| {

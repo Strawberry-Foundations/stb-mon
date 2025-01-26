@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{io::ErrorKind, net::SocketAddr, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use tokio::{
@@ -27,8 +27,13 @@ pub async fn tcp_service(
     let mut conn =
         match tokio::time::timeout(timeout, async { TcpStream::connect(addr).await }).await {
             Ok(Ok(conn)) => conn,
-            Ok(Err(ioe)) => return MonitorResult::IoError(ioe.to_string()),
-            Err(_) => return MonitorResult::ConnectionTimeout,
+            Ok(Err(ioe)) => {
+                if ioe.kind() == ErrorKind::ConnectionRefused {
+                    return MonitorResult::Down(true);
+                }
+                return MonitorResult::IoError(ioe.to_string());
+            }
+            Err(_) => return MonitorResult::Down(false),
         };
 
     let (sent, expected) = match expected {
@@ -49,7 +54,7 @@ pub async fn tcp_service(
     let read = match tokio::time::timeout(timeout, conn.read(&mut buf)).await {
         Ok(Ok(n)) => n,
         Ok(Err(ioe)) => return MonitorResult::IoError(ioe.to_string()),
-        Err(_) => return MonitorResult::ConnectionTimeout,
+        Err(_) => return MonitorResult::Down(false),
     };
 
     let bytes = buf[..read].to_vec();
