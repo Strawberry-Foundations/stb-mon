@@ -38,6 +38,8 @@ use crate::{
 //       any: any response
 //       sc: response with status code
 //          co: status code range (200-299,301,404-410)
+//       res: response with specific code and body
+//
 // to: timeout in seconds
 // met: http method, must be one of {get, post, put, delete, options, head, trace, connect, patch} (GET if not given)
 // hds: header map, looks like this: content-type:application/json,accept:*/* (empty if not given)

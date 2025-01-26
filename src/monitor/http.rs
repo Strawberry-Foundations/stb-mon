@@ -1,4 +1,6 @@
-use std::{collections::HashMap, str::FromStr, time::Duration};
+use std::{
+    collections::HashMap, str::FromStr, time::{Duration, Instant}
+};
 
 use axum::http::{HeaderName, HeaderValue};
 use reqwest::{Method, StatusCode};
@@ -132,7 +134,7 @@ pub enum HttpExpectedResponse {
     StatusCode(String),
     // The server replies with specified bytes after sending the bytes
     // (status_code, text_received)
-    Response(Option<u16>, String),
+    Response(Option<u16>, Vec<u8>),
 }
 
 pub async fn http_service(
@@ -141,6 +143,58 @@ pub async fn http_service(
     timeout: Duration,
     request_data: &HttpRequest,
 ) -> MonitorResult {
-    // TODO: implement http service
-    MonitorResult::Ok(0, "this service type is not implemented".to_string())
+    let client = reqwest::Client::new();
+    let start_time = Instant::now();
+    let res = client
+        .request(request_data.method.to_reqwest(), url)
+        .headers(request_data.headers.to_reqwest().unwrap())
+        .body(request_data.body.clone())
+        .timeout(timeout)
+        .send()
+        .await;
+
+    let res = match res {
+        Ok(res) => res,
+        Err(e) => {
+            if e.is_timeout() {
+                return MonitorResult::Down(false);
+            }
+            return MonitorResult::IoError(format!("reqwest threw error: {e}"));
+        }
+    };
+
+    match expected {
+        HttpExpectedResponse::Any => {
+            let delta = Instant::now().duration_since(start_time).as_millis();
+            return MonitorResult::Ok(
+                delta,
+                format!(
+                    "Server replied with status {} and {} bytes",
+                    res.status(),
+                    res.bytes().await.map(|b| b.len()).unwrap_or_default()
+                ),
+            );
+        },
+        HttpExpectedResponse::StatusCode(codes) => {
+            let codes = parse_codes(&codes).unwrap();
+            let delta = Instant::now().duration_since(start_time).as_millis();
+
+            if codes.contains(&res.status()) {
+                return MonitorResult::Ok(delta, format!(
+                    "Server replied with status {} and {} bytes",
+                    &res.status(),
+                    res.bytes().await.map(|b| b.len()).unwrap_or_default()
+                ));
+            } else {
+                return MonitorResult::UnexpectedResponse(delta, format!(
+                    "Server replied with status {} and {} bytes",
+                    &res.status(),
+                    res.bytes().await.map(|b| b.len()).unwrap_or_default()
+                ));
+            }
+        }
+        HttpExpectedResponse::Response(code, bytes) => {
+            todo!()
+        }
+    };
 }
