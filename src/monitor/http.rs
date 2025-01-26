@@ -3,6 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use adler32::adler32;
 use axum::http::{HeaderName, HeaderValue};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -135,8 +136,8 @@ pub enum HttpExpectedResponse {
     // verified at creation time
     StatusCode(String),
     // The server replies with specified bytes after sending the bytes
-    // (status_code, text_received)
-    Response(Option<u16>, Vec<u8>),
+    // (status_code, body_a32)
+    Response(Option<String>, u32),
 }
 
 pub async fn http_service(
@@ -184,8 +185,7 @@ pub async fn http_service(
                 return MonitorResult::IoError("Failed to parse response bytes".to_string());
             };
             let info = format!(
-                "Server replied with status {} and {} bytes",
-                status,
+                "Server replied with status {status} and {} bytes",
                 bytes.len(),
             );
 
@@ -195,25 +195,40 @@ pub async fn http_service(
                 return MonitorResult::UnexpectedResponse(delta, info);
             }
         }
-        HttpExpectedResponse::Response(code, bytes) => {
+        HttpExpectedResponse::Response(code, body_checksum) => {
             let status = res.status();
             let Ok(res_bytes) = res.bytes().await else {
                 return MonitorResult::IoError("Failed to parse response bytes".to_string());
             };
-            let info = format!(
-                "Server replied with status {status} and {} bytes",
-                res_bytes.len(),
+
+            if code
+                .clone()
+                .is_some_and(|c| !parse_codes(&c).unwrap().contains(&status))
+            {
+                return MonitorResult::UnexpectedResponse(
+                    delta,
+                    format!(
+                        "Server replied with status {status} and {} bytes",
+                        res_bytes.len(),
+                    ),
+                );
+            }
+
+            let body_a32 = adler32(res_bytes.to_vec().as_slice()).unwrap();
+            if body_checksum != &body_a32 {
+                return MonitorResult::UnexpectedResponse(
+                    delta,
+                    format!("Body checksum mismatch ({body_checksum} != {body_a32})"),
+                );
+            }
+
+            return MonitorResult::Ok(
+                delta,
+                format!(
+                    "Server replied with status {status} and {} bytes",
+                    res_bytes.len(),
+                ),
             );
-
-            if code.is_some_and(|c| status.as_u16() != c) {
-                return MonitorResult::UnexpectedResponse(delta, info);
-            }
-
-            if bytes != &res_bytes.to_vec() {
-                return MonitorResult::UnexpectedResponse(delta, info);
-            }
-
-            return MonitorResult::Ok(delta, info);
         }
     };
 }

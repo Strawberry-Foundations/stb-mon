@@ -1,5 +1,6 @@
 use std::{collections::HashMap, net::SocketAddr, str::FromStr, time::Duration};
 
+use adler32::adler32;
 use axum::{
     extract::{Path, Query},
     http::StatusCode,
@@ -39,7 +40,8 @@ use crate::{
 //       sc: response with status code
 //          co: status code range (200-299,301,404-410)
 //       res: response with specific code and body
-//
+//          co (opt): status codes
+//          bch: response body adler32 hash
 // to: timeout in seconds
 // met: http method, must be one of {get, post, put, delete, options, head, trace, connect, patch} (GET if not given)
 // hds: header map, looks like this: content-type:application/json,accept:*/* (empty if not given)
@@ -176,6 +178,35 @@ pub async fn add_monitor_route(
                         );
                     }
                     HttpExpectedResponse::StatusCode(codes.to_string())
+                }
+                Some("res") => {
+                    let codes = if let Some(codes) = q.get("co") {
+                        if codes.len() > 48 {
+                            return (
+                                StatusCode::BAD_REQUEST,
+                                "bad param `co` (status codes), must be at most 48 characters long"
+                                    .to_string(),
+                            );
+                        }
+                        if let None = http_mon::parse_codes(codes) {
+                            return (
+                                StatusCode::BAD_REQUEST,
+                                "bad param `co` (status codes), failed to parse".to_string(),
+                            );
+                        }
+                        Some(codes.to_string())
+                    } else {
+                        None
+                    };
+
+                    let Some(Ok(body_checksum)) = q.get("bch").map(|bc| bc.parse::<u32>()) else {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "bad or missing param `bch` (body adler32 checksum)".to_string(),
+                        );
+                    };
+
+                    HttpExpectedResponse::Response(codes, body_checksum)
                 }
                 None => {
                     return (

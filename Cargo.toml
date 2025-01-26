@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+adler32 = "1.2.0"
 anyhow = "1.0.95"
 axum = "0.8.1"
 axum-extra = { version = "0.10.0", features = ["cookie"] }
