@@ -71,14 +71,9 @@ pub async fn add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
                 "Server refused the connection"
             } else {
                 "Server did not reply within the timeout"
-            }.to_string();
-            record::add(
-                RecordResult::Down,
-                None,
-                mon_id,
-                info,
-            )
-            .await
+            }
+            .to_string();
+            record::add(RecordResult::Down, None, mon_id, info).await
         }
         MonitorResult::IoError(err) => record::add(RecordResult::Err, None, mon_id, err).await,
     }

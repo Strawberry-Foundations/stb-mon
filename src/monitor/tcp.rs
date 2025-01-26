@@ -32,7 +32,7 @@ pub async fn tcp_service(
                     return MonitorResult::Down(true);
                 }
                 return MonitorResult::IoError(ioe.to_string());
-            },
+            }
             Err(_) => return MonitorResult::Down(false),
         };
 

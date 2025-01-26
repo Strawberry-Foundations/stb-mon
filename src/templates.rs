@@ -43,7 +43,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             @if loc.len() < 32 { (loc) }
                             @else {
                                 @let tloc = loc.split_at(30).0;
-                                span title=(loc) { (tloc) };
+                                span title=(loc) { (tloc) "..." };
                             }
                         };
                         td {
@@ -94,7 +94,7 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         div style="position: absolute; top: 5px; right: 5px" {
             @if !is_logged_in {
                 label for="password" { "Login: " };
-                input #password placeholder="password ..." type="password";
+                input #password placeholder="Password" type="password";
                 button style="background: #181818" onclick="onLogin()" { "OK" };
             } @else {
                 p { "You are logged in - " a href="/admin" { "ADMIN" } };
