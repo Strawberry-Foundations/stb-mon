@@ -1,7 +1,7 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 use axum::http::{HeaderName, HeaderValue};
-use reqwest::StatusCode;
+use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use super::MonitorResult;
@@ -47,13 +47,14 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
     Some(codes)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum HttpMethod {
-    Options,
+    #[default]
     Get,
     Post,
     Put,
     Delete,
+    Options,
     Head,
     Trace,
     Connect,
@@ -64,20 +65,35 @@ impl HttpMethod {
     pub fn to_reqwest(&self) -> reqwest::Method {
         use reqwest::Method as RM;
         match self {
-            Self::Options => RM::OPTIONS,
             Self::Get => RM::GET,
             Self::Post => RM::POST,
             Self::Put => RM::PUT,
             Self::Delete => RM::DELETE,
+            Self::Options => RM::OPTIONS,
             Self::Head => RM::HEAD,
             Self::Trace => RM::TRACE,
             Self::Connect => RM::CONNECT,
             Self::Patch => RM::PATCH,
         }
     }
+
+    pub fn from_str(val: &str) -> Option<Self> {
+        match val.to_lowercase().as_str() {
+            "get" => Some(Self::Get),
+            "post" => Some(Self::Post),
+            "put" => Some(Self::Put),
+            "delete" => Some(Self::Delete),
+            "options" => Some(Self::Options),
+            "head" => Some(Self::Head),
+            "trace" => Some(Self::Trace),
+            "connect" => Some(Self::Connect),
+            "patch" => Some(Self::Patch),
+            _ => None,
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct HeaderHashMap(HashMap<String, String>);
 
 impl HeaderHashMap {
@@ -101,9 +117,9 @@ impl HeaderHashMap {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HttpRequest {
-    method: HttpMethod,
-    path: String,
-    headers: HeaderHashMap,
+    pub method: HttpMethod,
+    pub headers: HeaderHashMap,
+    pub body: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -115,14 +131,15 @@ pub enum HttpExpectedResponse {
     // verified at creation time
     StatusCode(String),
     // The server replies with specified bytes after sending the bytes
-    // (http_request, bytes_received)
-    Response(HttpRequest, String),
+    // (status_code, text_received)
+    Response(Option<u16>, String),
 }
 
 pub async fn http_service(
     url: &String,
     expected: &HttpExpectedResponse,
     timeout: Duration,
+    request_data: &HttpRequest,
 ) -> MonitorResult {
     // TODO: implement http service 
     MonitorResult::Ok(0, "this service type is not implemented".to_string())

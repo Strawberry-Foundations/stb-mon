@@ -40,9 +40,9 @@ async fn render_monitor_list(admin: bool) -> Markup {
                         td { (id) };
                         td {
                             @let loc = mon.service_data.service_location_str();
-                            @if loc.len() < 32 { (loc) }
+                            @if loc.len() < 128 { (loc) }
                             @else {
-                                @let tloc = loc.split_at(30).0;
+                                @let tloc = loc.split_at(126).0;
                                 span title=(loc) { (tloc) "..." };
                             }
                         };

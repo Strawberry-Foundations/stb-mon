@@ -5,6 +5,7 @@ use axum::{
     http::StatusCode,
 };
 use axum_extra::extract::CookieJar;
+use base64::{prelude::BASE64_STANDARD, Engine};
 use url::Url;
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
     config::CONFIG,
     database,
     monitor::{
-        MonitorData, http as http_mon, http::HttpExpectedResponse, tcp::TcpExpectedResponse,
+        http::{self as http_mon, HeaderHashMap, HttpExpectedResponse, HttpMethod, HttpRequest}, tcp::TcpExpectedResponse, MonitorData
     },
 };
 
@@ -36,6 +37,9 @@ use crate::{
 //       sc: response with status code
 //          co: status code range (200-299,301,404-410)
 // to: timeout in seconds
+// met: http method, must be one of {get, post, put, delete, options, head, trace, connect, patch} (GET if not given)
+// hds: header map, looks like this: content-type:application/json,accept:*/* (empty if not given)
+// body: base64 encoded request body (empty if none given)
 pub async fn add_monitor_route(
     q: Query<HashMap<String, String>>,
     cookies: CookieJar,
@@ -191,11 +195,41 @@ pub async fn add_monitor_route(
                 );
             };
 
+            let method = if let Some(method) = q.get("met") {
+                let Some(method) = HttpMethod::from_str(&method) else {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        "bad param `met`, must be one of {get, post, put, delete, options, head, trace, connect, patch}".to_string(),
+                    );
+                };
+
+                method
+            } else {
+                HttpMethod::default()
+            };
+
+            let headers = if let Some(headers) = q.get("hds") {
+                return (StatusCode::IM_A_TEAPOT, "header map parameter is not yet implemented".to_string());
+            } else {
+                HeaderHashMap::default()
+            };
+
+            let body = q.get("body").map(String::from).unwrap_or_default();
+            let Ok(body) = BASE64_STANDARD.decode(body) else {
+                return (StatusCode::BAD_REQUEST, "bad param `body`, failed to decode base64".to_string());
+
+            };
+
             match database::monitor::add(
                 MonitorData::Http {
                     url,
                     expected: expected_response,
                     timeout: Duration::from_secs(timeout_s as _),
+                    request: HttpRequest {
+                        method,
+                        headers,
+                        body
+                    }
                 },
                 interval_mins,
             )

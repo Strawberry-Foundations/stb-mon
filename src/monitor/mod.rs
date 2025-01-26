@@ -1,5 +1,6 @@
 use std::{net::SocketAddr, time::Duration};
 
+use http::HttpRequest;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
@@ -21,6 +22,7 @@ pub enum MonitorData {
     },
     Http {
         url: String, // url validity verified at creation time
+        request: HttpRequest,
         expected: http::HttpExpectedResponse,
         timeout: Duration,
     },
@@ -57,7 +59,8 @@ impl MonitorData {
                 url,
                 expected,
                 timeout,
-            } => http::http_service(url, expected, *timeout).await,
+                request,
+            } => http::http_service(url, expected, *timeout, request).await,
         }
     }
 
