@@ -19,12 +19,14 @@ lazy_static! {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             serviceDataMp BLOB NOT NULL,
             intervalMins INTEGER NOT NULL,
-            enabled BOOLEAN DEFAULT 1
+            enabled BOOLEAN DEFAULT 1,
+            serviceName VARCHAR NOT NULL
         )
         ",
                 [],
             )
             .expect("Failed to run query");
+
         database
             .execute(
                 r"
@@ -39,6 +41,7 @@ lazy_static! {
                 [],
             )
             .expect("Failed to run query");
+
         database
             .execute(
                 r"

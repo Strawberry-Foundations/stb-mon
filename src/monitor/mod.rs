@@ -8,6 +8,7 @@ pub mod tcp;
 
 pub struct Monitor {
     pub service_data: MonitorData,
+    pub service_name: String,
     pub interval_mins: u64,
     pub enabled: bool,
 }
@@ -38,8 +39,8 @@ pub enum MonitorResult {
     UnexpectedResponse(u128, String),
     // The server did not send a response or the port is firewalled
     // Could also be caused by packet loss
-    // (conn_refused)
-    Down(bool),
+    // (info)
+    Down(String),
     // An I/O error occurred while checking the service
     // (error)
     IoError(String),

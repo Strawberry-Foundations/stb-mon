@@ -13,6 +13,13 @@ pub struct Config {
     #[serde(rename = "password_sha256")]
     pub password: String,
     pub allow_guest: bool,
+    pub http: ConfigHttp,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ConfigHttp {
+    #[serde(rename = "5xx_status_code_down")]
+    pub fivexx_status_code_down: bool,
 }
 
 impl Config {

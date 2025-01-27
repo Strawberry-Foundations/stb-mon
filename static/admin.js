@@ -39,21 +39,22 @@ function onAddTypeChange() {
 }
 
 function onHttpExpectedResponseChange() {
-    let responseType = elem("expected-response");
+    let responseType = elem("http-expected-response");
 
     let statusCodeOptions = elem("http-sc-options");
     let responseBodyOptions = elem("http-response-options");
 
     statusCodeOptions.hidden = responseType.value == "any";
-    responseBodyOptions.hidden = responseType.value != "any";
+    responseBodyOptions.hidden = responseType.value != "res";
 }
 
 async function onAdd() {
     let serviceType = elem("service-type").value;
+    let serviceName = elem("service-name").value;
     let intervalMins = elem("interval").value;
     let timeoutSecs = elem("timeout").value;
 
-    let url = `/api/monitors?ty=${serviceType}&in=${intervalMins}&to=${timeoutSecs}`;
+    let url = `/api/monitors?ty=${serviceType}&na=${uriEnc(serviceName)}&in=${intervalMins}&to=${timeoutSecs}`;
 
     switch (serviceType) {
         case "tcp": {
@@ -78,7 +79,6 @@ async function onAdd() {
             
             url += `&url=${uriEnc(serviceUrl)}&exre=${expectedResponse}&body=${btoa(requestBody)}`
 
-            alert(expectedResponse);
             switch (expectedResponse) {
                 case "any": {
                     let res = await fetch(url, { method: "PUT" });
@@ -92,7 +92,7 @@ async function onAdd() {
                 case "sc": {
                     let statusCode = elem("status-code").value;
                     
-                    url += `&sc=${statusCode}`;
+                    url += `&co=${statusCode}`;
 
                     let res = await fetch(url, { method: "PUT" });
                     alert(await res.text());

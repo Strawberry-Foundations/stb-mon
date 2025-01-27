@@ -17,16 +17,16 @@ static NEWCSS: PreEscaped<&'static str> = PreEscaped(
         max-width: 65%;
     }
 
-    input, label {
-        display: block;
-    }
+    #addform {
+        input {
+            min-width: 30%;
+            display: block;
+        }
 
-    input {
-        min-width: 30%;
-    }
-
-    label {
-        margin-down: 3px;
+        label {
+            margin-down: 3px;
+            display: block;
+        }
     }
 </style>
 "#
@@ -43,17 +43,21 @@ async fn render_monitor_list(admin: bool) -> Markup {
             caption { "Monitors" }
             thead { tr {
                 @if admin { th scope="col" { "ID" } }
-                th scope="col" { "Service" }
+                th scope="col" { "Service name" }
+                th scope="col" { "Service location" }
                 th scope="col" { "Last checked" }
                 th scope="col" { "Interval" }
-                th scope="col" { "Enabled" }
-                @if admin { th scope="col" { "Actions" } }
+                @if admin {
+                    th scope="col" { "Enabled" }
+                    th scope="col" { "Actions" }
+                }
             } }
             tbody {
                 @for (id, mon) in mons {
                     tr {
                         @let last_record = crate::database::record::util_last_record(id).await.unwrap();
                         @if admin { td { (id) } }
+                        { td { (mon.service_name) } }
                         td {
                             @let loc = mon.service_data.service_location_str();
                             @let tloc = loc.split_at_checked(126).map(|s| s.0).unwrap_or(&loc);
@@ -83,15 +87,17 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             ")";
                         };
                         td { (mon.interval_mins) " min" };
-                        td { (mon.enabled) };
-                        @if admin { td {
-                            a href={ "javascript:onDelete(" (id) ")" } { "Del" };
-                            " "
-                            a href={ "javascript:onToggle(" (id) ")" } {
-                                @if mon.enabled { "Dis" }
-                                @else { "En" }
+                        @if admin {
+                            td { (mon.enabled) };
+                            td {
+                                a href={ "javascript:onDelete(" (id) ")" } { "Del" };
+                                " "
+                                a href={ "javascript:onToggle(" (id) ")" } {
+                                    @if mon.enabled { "Dis" }
+                                    @else { "En" }
+                                }
                             }
-                        }}
+                        }
                         td { a href={ "/monitor/" (id) } { "More" } }
                     }
                 }
@@ -206,6 +212,9 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
                             option value="tcp" selected { "TCP" }
                             option value="http" { "HTTP" }
                         }
+
+                        label for="service-name" { "Service name" }
+                        input #service-name placeholder="e.g. Website, Blog";
 
                         label for="interval" { "Check interval" }
                         input #interval type="number" placeholder="minutes" min="1" max="94080" value="10";

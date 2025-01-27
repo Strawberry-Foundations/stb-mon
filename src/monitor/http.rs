@@ -7,6 +7,8 @@ use axum::http::{HeaderName, HeaderValue};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
+use crate::config::CONFIG;
+
 use super::MonitorResult;
 
 pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
@@ -159,11 +161,16 @@ pub async fn http_service(
         Ok(res) => res,
         Err(e) => {
             if e.is_timeout() {
-                return MonitorResult::Down(false);
+                return MonitorResult::Down("Connection timed out".to_string());
             }
             return MonitorResult::IoError(format!("reqwest threw error: {:?}", e.source()));
         }
     };
+
+    if CONFIG.get().unwrap().lock().await.http.fivexx_status_code_down
+        && (500..599).contains(&res.status().as_u16()) {
+        return MonitorResult::Down(format!("Server replied with status {}", res.status()));
+    }
 
     let delta = Instant::now().duration_since(start_time).as_millis();
     match expected {

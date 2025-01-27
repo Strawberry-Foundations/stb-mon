@@ -24,6 +24,7 @@ use crate::{
 // ty: service type
 // in: check interval in minutes
 // to: timeout in seconds
+// na: service name / description, only used for the frontend (empty if none given)
 //
 // tcp query
 // sa: socket address (host:port)
@@ -77,6 +78,8 @@ pub async fn add_monitor_route(
             "bad or missing param `to` (timeout)".to_string(),
         );
     };
+
+    let service_name = q.get("na").cloned().unwrap_or_default();
 
     if interval_mins < 1 || interval_mins > 60 * 24 * 7
     /* 7 days */
@@ -137,6 +140,7 @@ pub async fn add_monitor_route(
                     timeout: Duration::from_secs(timeout_s as _),
                 },
                 interval_mins,
+                service_name,
             )
             .await
             {
@@ -268,6 +272,7 @@ pub async fn add_monitor_route(
                     },
                 },
                 interval_mins,
+                service_name
             )
             .await
             {

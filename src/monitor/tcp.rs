@@ -29,11 +29,11 @@ pub async fn tcp_service(
             Ok(Ok(conn)) => conn,
             Ok(Err(ioe)) => {
                 if ioe.kind() == ErrorKind::ConnectionRefused {
-                    return MonitorResult::Down(true);
+                    return MonitorResult::Down("Server refused connection".to_string());
                 }
                 return MonitorResult::IoError(ioe.to_string());
             }
-            Err(_) => return MonitorResult::Down(false),
+            Err(_) => return MonitorResult::Down("Connection timed out".to_string()),
         };
 
     let (sent, expected) = match expected {
@@ -54,7 +54,7 @@ pub async fn tcp_service(
     let read = match tokio::time::timeout(timeout, conn.read(&mut buf)).await {
         Ok(Ok(n)) => n,
         Ok(Err(ioe)) => return MonitorResult::IoError(ioe.to_string()),
-        Err(_) => return MonitorResult::Down(false),
+        Err(_) => return MonitorResult::Down("Read timed out".to_string()),
     };
 
     let bytes = buf[..read].to_vec();
