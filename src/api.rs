@@ -23,6 +23,7 @@ use crate::{
 // Query q fields
 // ty: service type
 // in: check interval in minutes
+// to: timeout in seconds
 //
 // tcp query
 // sa: socket address (host:port)
@@ -31,7 +32,6 @@ use crate::{
 //       bytes: bytes as hex
 //         sh: sent bytes as hex, must be even
 //         ex: expected response as string of hex + ?, must be divisible by 2
-// to: timeout in seconds
 //
 // http query
 // url: (http(s)://example.com(:port)/(path))
@@ -42,7 +42,6 @@ use crate::{
 //       res: response with specific code and body
 //          co (opt): status codes
 //          bch: response body adler32 hash
-// to: timeout in seconds
 // met: http method, must be one of {get, post, put, delete, options, head, trace, connect, patch} (GET if not given)
 // hds: header map, looks like this: content-type:application/json,accept:*/* (empty if not given)
 // body: base64 encoded request body (empty if none given)
@@ -54,7 +53,7 @@ pub async fn add_monitor_route(
         None => false,
         Some(c) => database::session::is_valid(c.value())
             .await
-            .unwrap_or(false),
+            .unwrap_or_default(),
     };
     if !is_logged_in {
         return (
@@ -70,6 +69,15 @@ pub async fn add_monitor_route(
         );
     };
 
+
+
+    let Some(Ok(timeout_s)) = q.get("to").map(|to| to.parse::<u16>()) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            "bad or missing param `to` (timeout)".to_string(),
+        );
+    };
+
     if interval_mins < 1 || interval_mins > 60 * 24 * 7
     /* 7 days */
     {
@@ -78,6 +86,15 @@ pub async fn add_monitor_route(
             "bad param `ìn` (check interval), must be within 1..94080".to_string(),
         );
     }
+
+
+    if timeout_s < 1 || timeout_s > 60 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "bad param `to` (timeout), must be within 1..60".to_string(),
+        );
+    }
+    
     let id = match q.get("ty").map(|s| s.as_str()) {
         None => {
             return (
@@ -95,7 +112,7 @@ pub async fn add_monitor_route(
 
             let expected_response = match q.get("exre").map(|s| s.as_str()) {
                 Some("op") => TcpExpectedResponse::OpenPort,
-                Some("bits") => {
+                Some("bytes") => {
                     todo!()
                 }
                 None => {
@@ -112,20 +129,6 @@ pub async fn add_monitor_route(
                     );
                 }
             };
-
-            let Some(Ok(timeout_s)) = q.get("to").map(|to| to.parse::<u16>()) else {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    "bad or missing param `to` (timeout)".to_string(),
-                );
-            };
-
-            if timeout_s < 1 || timeout_s > 60 {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    "bad param `to` (timeout), must be within 1..60".to_string(),
-                );
-            }
 
             match database::monitor::add(
                 MonitorData::Tcp {
@@ -221,13 +224,6 @@ pub async fn add_monitor_route(
                             .to_string(),
                     );
                 }
-            };
-
-            let Some(Ok(timeout_s)) = q.get("to").map(|to| to.parse::<u16>()) else {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    "bad or missing param `to` (timeout)".to_string(),
-                );
             };
 
             let method = if let Some(method) = q.get("met") {
@@ -329,7 +325,7 @@ pub async fn delete_monitor_route(id: Path<u64>, cookies: CookieJar) -> (StatusC
         None => false,
         Some(c) => database::session::is_valid(c.value())
             .await
-            .unwrap_or(false),
+            .unwrap_or_default(),
     };
     if !is_logged_in {
         return (
@@ -353,7 +349,7 @@ pub async fn toggle_monitor(id: Path<u64>, cookies: CookieJar) -> (StatusCode, S
         None => false,
         Some(c) => database::session::is_valid(c.value())
             .await
-            .unwrap_or(false),
+            .unwrap_or_default(),
     };
     if !is_logged_in {
         return (

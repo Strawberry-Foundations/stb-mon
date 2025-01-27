@@ -12,8 +12,24 @@ static NEWCSS: PreEscaped<&'static str> = PreEscaped(
     r#"
 <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
-<style>body { max-width: 65% }</style>
-"#,
+<style>
+    body {
+        max-width: 65%;
+    }
+
+    input, label {
+        display: block;
+    }
+
+    input {
+        min-width: 30%;
+    }
+
+    label {
+        margin-down: 3px;
+    }
+</style>
+"#
 );
 
 async fn render_monitor_list(admin: bool) -> Markup {
@@ -24,14 +40,14 @@ async fn render_monitor_list(admin: bool) -> Markup {
         .sorted_by(|(_, m1), (_, m2)| m2.enabled.cmp(&m1.enabled));
     html!(
         table {
-            caption { "Enabled monitors" }
+            caption { "Monitors" }
             thead { tr {
-                th scope="col" { "ID" };
-                th scope="col" { "Service" };
-                th scope="col" { "Last checked" };
-                th scope="col" { "Interval" };
-                th scope="col" { "Enabled" };
-                @if admin { th scope="col" { "Actions" } };
+                th scope="col" { "ID" }
+                th scope="col" { "Service" }
+                th scope="col" { "Last checked" }
+                th scope="col" { "Interval" }
+                th scope="col" { "Enabled" }
+                @if admin { th scope="col" { "Actions" } }
             } }
             tbody {
                 @for (id, mon) in mons {
@@ -43,7 +59,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             @if loc.len() < 128 { (loc) }
                             @else {
                                 @let tloc = loc.split_at(126).0;
-                                span title=(loc) { (tloc) "..." };
+                                span title=(loc) { (tloc) "..." }
                             }
                         };
                         td {
@@ -87,17 +103,17 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         None => false,
         Some(c) => database::session::is_valid(c.value())
             .await
-            .unwrap_or(false),
+            .unwrap_or_default(),
     };
 
     let pw_input = html!(
         div style="position: absolute; top: 5px; right: 5px" {
             @if !is_logged_in {
-                label for="password" { "Login: " };
+                label for="password" { "Login: " }
                 input #password placeholder="Password" type="password";
-                button style="background: #181818" onclick="onLogin()" { "OK" };
+                button style="background: #181818" onclick="onLogin()" { "OK" }
             } @else {
-                p { "You are logged in - " a href="/admin" { "ADMIN" } };
+                p { "You are logged in - " a href="/admin" { "ADMIN" } }
             }
         };
     );
@@ -106,14 +122,14 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         html! {
             (DOCTYPE);
             head {
-                (NEWCSS);
+                (NEWCSS)
                 script src="/index.js" {};
-                title { (CONFIG.get().unwrap().lock().await.instance_name) };
+                title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
 
             body {
                 header {
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) };
+                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
                     (pw_input)
                 }
                 p {
@@ -123,15 +139,15 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         }
     } else {
         html!(
-            (DOCTYPE);
+            (DOCTYPE)
             head {
                 script src="/index.js" {};
-                title { (CONFIG.get().unwrap().lock().await.instance_name) };
+                title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
 
             body {
                 header {
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) };
+                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
                     (pw_input)
                 }
                 @if is_logged_in { p { "Log in to see this" } }
@@ -146,11 +162,11 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         None => false,
         Some(c) => database::session::is_valid(c.value())
             .await
-            .unwrap_or(false),
+            .unwrap_or_default(),
     };
     if !is_logged_in {
         let render = html!(
-            (DOCTYPE);
+            (DOCTYPE)
             head {
                 (NEWCSS)
                 title { "Unauthorized" }
@@ -158,8 +174,8 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
             body {
                 header { "Unauthorized" }
-                p { "Please log in to see this page" };
-                a href="/" { "Back to main page" };
+                p { "Please log in to see this page" }
+                a href="/" { "Back to main page" }
             }
         );
 
@@ -171,15 +187,90 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         head {
             (NEWCSS);
             script src="/admin.js" {};
-            title { (CONFIG.get().unwrap().lock().await.instance_name) };
+            title { (CONFIG.get().unwrap().lock().await.instance_name) }
         }
 
         body {
             header {
-                h1 { (CONFIG.get().unwrap().lock().await.instance_name) " - Admin" };
+                h1 { (CONFIG.get().unwrap().lock().await.instance_name) " - Admin" }
             }
             p {
                 (render_monitor_list(true).await)
+                details {
+                    summary { "Add" };
+                    form #addform autocomplete="off" action="javascript:onAdd()" {
+                        label for="service-type" { "Type" }
+                        select #service-type onchange="onAddTypeChange()" {
+                            option value="tcp" selected { "TCP" }
+                            option value="http" { "HTTP" }
+                        }
+
+                        label for="interval" { "Check interval" }
+                        input #interval type="number" placeholder="minutes" min="1" max="94080" value="10";
+
+                        label for="timeout" { "Timeout" }
+                        input #timeout type="number" placeholder="seconds" min="1" max="60" value="5";
+                        
+                        br;
+
+                        div #tcp-options {
+                            label for="sock-addr" { "Socket address" }
+                            input #sock-addr placeholder="133.33.33.37:4269";
+
+                            label for="expected-response" { "Expected response" }
+                            select #tcp-expected-response /* onchanged="onTcpExpectedResponseChange()" */ {
+                                option value="op" { "Open port" }
+                                option value="bytes" disabled { "Bytes" }
+                            }
+
+                            // TODO: bytes input fields
+                        }
+
+                        div #http-options hidden {
+                            label for="method" { "Method" }
+                            select #method {
+                                option value="get" { "GET" }
+                                option value="post" { "POST" }
+                                option value="put" { "PUT" }
+                                option value="delete" { "DELETE" }
+                                option value="options" { "OPTIONS" }
+                                option value="head" { "HEAD" }
+                                option value="trace" { "TRACE" }
+                                option value="connect" { "CONNECT" }
+                                option value="patch" { "PATCH" }
+                            }
+
+                            label for="url" { "URL" }
+                            input #url placeholder="https://example.com";
+
+                            label for="expected-response" { "Expected response" }
+                            select #http-expected-response onchange="onHttpExpectedResponseChange()" {
+                                option value="any" { "Any" }
+                                option value="sc" { "Status codes" }
+                                option value="res" disabled { "Specific response" }
+                            };
+
+                            div #http-sc-options hidden {
+                                label for="status-code" { "Status codes" }
+                                input #status-code placeholder="200-299, 301, 400-410";
+                            };
+
+                            div #http-response-options hidden {
+                                // TODO: front end for body checksum generation
+                                label for="body-cs" { "Response body adler32 hash" }
+                                input #body-cs type="number" placeholder="adler32" min="0" max="4294967296";
+                            };
+
+                            label for="request-body" { "Request body" }
+                            textarea #request-body {};
+
+
+                        };
+                        br;
+
+                        input type="submit";
+                    }
+                }
             }
         }
     );

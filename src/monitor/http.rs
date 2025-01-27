@@ -1,6 +1,5 @@
 use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
+    collections::HashMap, error::Error, time::{Duration, Instant}
 };
 
 use adler32::adler32;
@@ -162,7 +161,7 @@ pub async fn http_service(
             if e.is_timeout() {
                 return MonitorResult::Down(false);
             }
-            return MonitorResult::IoError(format!("reqwest threw error: {e}"));
+            return MonitorResult::IoError(format!("reqwest threw error: {:?}", e.source()));
         }
     };
 
