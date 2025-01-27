@@ -55,7 +55,9 @@ async fn render_monitor_list(admin: bool) -> Markup {
             tbody {
                 @for (id, mon) in mons {
                     tr {
-                        @let last_record = crate::database::record::util_last_record(id).await.unwrap();
+                        @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
+                            continue;
+                        };
                         @if admin { td { (id) } }
                         { td { (mon.service_name) } }
                         td {
