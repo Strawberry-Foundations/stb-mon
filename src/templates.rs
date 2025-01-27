@@ -28,6 +28,10 @@ static NEWCSS: PreEscaped<&'static str> = PreEscaped(
             display: block;
         }
     }
+    
+    .down {
+        background-color: rgba(255, 0, 0, 0.4);
+    }
 </style>
 "#
 );
@@ -54,10 +58,17 @@ async fn render_monitor_list(admin: bool) -> Markup {
             } }
             tbody {
                 @for (id, mon) in mons {
-                    tr {
-                        @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
-                            continue;
-                        };
+                    @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
+                        continue;
+                    };
+                    @let background_color = match last_record.result {
+                        RecordResult::Ok => "rgba(0, 0, 0, 0)",
+                        RecordResult::Unexpected => "rgba(245, 204, 0, 0.1)",
+                        RecordResult::Down => "rgba(255, 0, 0, 0.1)",
+                        RecordResult::Err => "rgba(125, 21, 21, 0.1)",
+                    };
+                    
+                    tr style={ "background-color:" (background_color) } {
                         @if admin { td { (id) } }
                         { td { (mon.service_name) } }
                         td {
