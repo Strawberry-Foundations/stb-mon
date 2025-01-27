@@ -70,7 +70,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                     
                     tr style={ "background-color:" (background_color) } {
                         @if admin { td { (id) } }
-                        { td { (mon.service_name) } }
+                        td { (mon.service_name) }
                         td {
                             @let loc = mon.service_data.service_location_str();
                             @let tloc = loc.split_at_checked(126).map(|s| s.0).unwrap_or(&loc);
