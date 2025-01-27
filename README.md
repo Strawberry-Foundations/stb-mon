@@ -8,11 +8,12 @@
 This project is currently under development and is **not** ready for production use.
 
 ## What is this?
-Strawberry Monitor is a simple uptime panel that allows you to monitor the uptime of services. As of writing this, it only supports TCP, but UDP and ICMP support is planned.
+
+Strawberry Monitor is a simple uptime panel that allows you to monitor the uptime of services. As of writing this, it only supports TCP and HTTP, but UDP and ICMP support is planned.
 
 ## Features
 
-- TCP service monitoring (UDP and ICMP support planned)
+- TCP and HTTP service monitoring (UDP and ICMP support planned)
 - Web-based dashboard
 - Configurable check intervals
 - Authentication for administrative functions
@@ -23,8 +24,10 @@ Strawberry Monitor aims to provide:
 
 - 🚀 **Simplicity**: Minimal setup, fast deployment
 - 🎯 **Focus**: Core monitoring features without bloat
-- 🔧 **Efficiency**: Low resource consumption
-- 📊 **Clarity**: Clean, modern web interface
+- 🪶 **Lightweight**:
+   - Uses SQLite as database
+   - Low resource consumption (uses 15MB of memory)
+- 📊 **Clarity**: Clean, minimal web interface built on [new.css](https://newcss.net)
 
 Perfect for small to medium infrastructures and developers seeking a straightforward monitoring solution.
 
