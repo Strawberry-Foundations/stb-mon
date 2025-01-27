@@ -42,7 +42,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
         table {
             caption { "Monitors" }
             thead { tr {
-                th scope="col" { "ID" }
+                @if admin { th scope="col" { "ID" } }
                 th scope="col" { "Service" }
                 th scope="col" { "Last checked" }
                 th scope="col" { "Interval" }
@@ -53,15 +53,17 @@ async fn render_monitor_list(admin: bool) -> Markup {
                 @for (id, mon) in mons {
                     tr {
                         @let last_record = crate::database::record::util_last_record(id).await.unwrap();
-                        td { (id) };
+                        @if admin { td { (id) } }
                         td {
                             @let loc = mon.service_data.service_location_str();
-                            @if loc.len() < 128 { (loc) }
-                            @else {
-                                @let tloc = loc.split_at(126).0;
-                                span title=(loc) { (tloc) "..." }
+                            @let tloc = loc.split_at_checked(126).map(|s| s.0).unwrap_or(&loc);
+                            @if loc.starts_with("http") {
+                                a href=(loc) { (tloc) }
                             }
-                        };
+                            @else {
+                                (tloc)
+                            }
+                        }
                         td {
                             @let (msg, color) = match last_record.result {
                                 RecordResult::Ok => ("Up", "#6fff31"),
