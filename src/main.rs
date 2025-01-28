@@ -2,7 +2,7 @@ use crate::config::CONFIG;
 
 use anyhow::Context;
 use axum::{
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use checker::checker_thread;
@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/index.js", get(routes::indexjs_route))
         .route("/admin.js", get(routes::adminjs_route))
         .route("/api/monitors/{id}", delete(api::delete_monitor_route))
-        .route("/api/monitors/{id}/toggle", put(api::toggle_monitor))
+        .route("/api/monitors/{id}/toggle", patch(api::toggle_monitor))
         .route("/api/monitors", put(api::add_monitor_route))
         .route("/api/create_session", post(api::create_session_route));
 

@@ -25,10 +25,10 @@ pub enum RecordResult {
 impl From<u8> for RecordResult {
     fn from(value: u8) -> Self {
         match value {
-            0 => RecordResult::Ok,
-            1 => RecordResult::Unexpected,
-            2 => RecordResult::Down,
-            3 => RecordResult::Err,
+            0 => Self::Ok,
+            1 => Self::Unexpected,
+            2 => Self::Down,
+            3 => Self::Err,
             _ => unreachable!(),
         }
     }

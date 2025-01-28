@@ -27,11 +27,13 @@ pub async fn is_valid(token: &str) -> anyhow::Result<bool> {
     let mut hasher = Sha256::new();
     hasher.update(token);
     let hash = hex::encode(hasher.finalize());
-    match DATABASE.lock().await.query_row(
+    
+    let sessions =  DATABASE.lock().await.query_row(
         "SELECT token FROM sessions WHERE (token = ? AND expiresAt > ?)",
         params![hash, current_unix_time()],
         |_| Ok(()),
-    ) {
+    );
+    match sessions {
         Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
         Err(e) => bail!(e),
         _ => {}

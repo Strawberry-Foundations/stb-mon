@@ -23,7 +23,7 @@ async function onDelete(id) {
 }
 
 async function onToggle(id) {
-    let res = await fetch(`/api/monitors/${id}/toggle`, { method: "PUT" });
+    let res = await fetch(`/api/monitors/${id}/toggle`, { method: "PATCH" });
     alert(await res.text())
     window.location.reload();
 }
