@@ -46,7 +46,7 @@ pub async fn tcp_service(
         TcpExpectedResponse::Bits(x, y) => (x, y),
     };
 
-    if let Err(ioe) = conn.write_all(&sent).await {
+    if let Err(ioe) = conn.write_all(sent).await {
         return MonitorResult::IoError(ioe.to_string());
     };
 

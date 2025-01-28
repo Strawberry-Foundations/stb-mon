@@ -25,7 +25,7 @@ pub async fn is_valid(token: &str) -> anyhow::Result<bool> {
     }
 
     let mut hasher = Sha256::new();
-    hasher.update(&token);
+    hasher.update(token);
     let hash = hex::encode(hasher.finalize());
     match DATABASE.lock().await.query_row(
         "SELECT token FROM sessions WHERE (token = ? AND expiresAt > ?)",
@@ -37,5 +37,5 @@ pub async fn is_valid(token: &str) -> anyhow::Result<bool> {
         _ => {}
     }
 
-    return Ok(true);
+    Ok(true)
 }

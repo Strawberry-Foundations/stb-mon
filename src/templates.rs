@@ -299,5 +299,5 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         }
     );
 
-    return (StatusCode::OK, render);
+    (StatusCode::OK, render)
 }

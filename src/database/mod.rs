@@ -7,7 +7,7 @@ pub mod monitor;
 pub mod record;
 pub mod session;
 
-static DATABASE_PATH: &'static str = "./stbmon.sqlite";
+static DATABASE_PATH: &str = "./stbmon.sqlite";
 
 lazy_static! {
     pub static ref DATABASE: Arc<Mutex<Connection>> = {

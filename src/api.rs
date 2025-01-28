@@ -1,6 +1,5 @@
 use std::{collections::HashMap, net::SocketAddr, str::FromStr, time::Duration};
 
-use adler32::adler32;
 use axum::{
     extract::{Path, Query},
     http::StatusCode,
@@ -79,7 +78,7 @@ pub async fn add_monitor_route(
 
     let service_name = q.get("na").cloned().unwrap_or_default();
 
-    if interval_mins < 1 || interval_mins > 60 * 24 * 7
+    if !(1..=60 * 24 * 7).contains(&interval_mins)
     /* 7 days */
     {
         return (
@@ -88,7 +87,7 @@ pub async fn add_monitor_route(
         );
     }
 
-    if timeout_s < 1 || timeout_s > 60 {
+    if !(1..=60).contains(&timeout_s) {
         return (
             StatusCode::BAD_REQUEST,
             "bad param `to` (timeout), must be within 1..60".to_string(),
@@ -175,7 +174,7 @@ pub async fn add_monitor_route(
                                 .to_string(),
                         );
                     }
-                    if let None = http_mon::parse_codes(codes) {
+                    if http_mon::parse_codes(codes).is_none() {
                         return (
                             StatusCode::BAD_REQUEST,
                             "bad param `co` (status codes), failed to parse".to_string(),
@@ -192,7 +191,7 @@ pub async fn add_monitor_route(
                                     .to_string(),
                             );
                         }
-                        if let None = http_mon::parse_codes(codes) {
+                        if http_mon::parse_codes(codes).is_none() {
                             return (
                                 StatusCode::BAD_REQUEST,
                                 "bad param `co` (status codes), failed to parse".to_string(),
@@ -228,7 +227,7 @@ pub async fn add_monitor_route(
             };
 
             let method = if let Some(method) = q.get("met") {
-                let Some(method) = HttpMethod::from_str(&method) else {
+                let Some(method) = HttpMethod::from_str(method) else {
                     return (
                         StatusCode::BAD_REQUEST,
                         "bad param `met`, must be one of {get, post, put, delete, options, head, trace, connect, patch}".to_string(),

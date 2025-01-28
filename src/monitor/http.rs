@@ -187,17 +187,17 @@ pub async fn http_service(
     let delta = Instant::now().duration_since(start_time).as_millis();
     match expected {
         HttpExpectedResponse::Any => {
-            return MonitorResult::Ok(
+            MonitorResult::Ok(
                 delta,
                 format!(
                     "Server replied with status {} and {} bytes",
                     res.status(),
                     res.bytes().await.map(|b| b.len()).unwrap_or_default()
                 ),
-            );
+            )
         }
         HttpExpectedResponse::StatusCode(codes) => {
-            let codes = parse_codes(&codes).unwrap();
+            let codes = parse_codes(codes).unwrap();
             let status = res.status();
             let Ok(bytes) = res.bytes().await else {
                 return MonitorResult::IoError("Failed to parse response bytes".to_string());
@@ -208,9 +208,9 @@ pub async fn http_service(
             );
 
             if codes.contains(&status) {
-                return MonitorResult::Ok(delta, info);
+                MonitorResult::Ok(delta, info)
             } else {
-                return MonitorResult::UnexpectedResponse(delta, info);
+                MonitorResult::UnexpectedResponse(delta, info)
             }
         }
         HttpExpectedResponse::Response(code, body_checksum) => {
@@ -240,13 +240,13 @@ pub async fn http_service(
                 );
             }
 
-            return MonitorResult::Ok(
+            MonitorResult::Ok(
                 delta,
                 format!(
                     "Server replied with status {status} and {} bytes",
                     res_bytes.len(),
                 ),
-            );
+            )
         }
-    };
+    }
 }

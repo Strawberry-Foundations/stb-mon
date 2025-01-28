@@ -28,7 +28,7 @@ impl Config {
         hasher.update(inp);
         let hash = hasher.finalize();
 
-        return hex::encode(hash) == self.password.to_ascii_lowercase();
+        hex::encode(hash) == self.password.to_ascii_lowercase()
     }
 }
 
