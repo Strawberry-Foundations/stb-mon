@@ -63,7 +63,9 @@ pub async fn tcp_service(
         return MonitorResult::Ok(
             Instant::now().duration_since(start_time).as_millis(),
             format!(
-                "The service successfully established the connection and sent a response\n\nResponse hex: {bytes:x?}"
+                "The service successfully established the connection and sent a response{}: {:x?}",
+                if bytes.len() > 100 { " (trucated)" } else { "" },
+                &bytes[..bytes.len().clamp(0, 100)],
             ),
         );
     }

@@ -6,7 +6,7 @@ use crate::{
 use axum::http::StatusCode;
 use axum_extra::extract::CookieJar;
 use itertools::Itertools;
-use maud::{DOCTYPE, Markup, PreEscaped, html};
+use maud::{html, Markup, PreEscaped, DOCTYPE};
 
 static NEWCSS: PreEscaped<&'static str> = PreEscaped(
     r#"
@@ -33,7 +33,7 @@ static NEWCSS: PreEscaped<&'static str> = PreEscaped(
         background-color: rgba(255, 0, 0, 0.4);
     }
 </style>
-"#
+"#,
 );
 
 async fn render_monitor_list(admin: bool) -> Markup {
@@ -67,7 +67,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                         RecordResult::Down => "rgba(255, 0, 0, 0.1)",
                         RecordResult::Err => "rgba(125, 21, 21, 0.1)",
                     };
-                    
+
                     tr style={ "background-color:" (background_color) } {
                         @if admin { td { (id) } }
                         td { (mon.service_name) }
@@ -234,7 +234,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
                         label for="timeout" { "Timeout" }
                         input #timeout type="number" placeholder="seconds" min="1" max="60" value="5";
-                        
+
                         br;
 
                         div #tcp-options {

@@ -2,8 +2,8 @@ use crate::time_util::current_unix_time;
 use crate::{
     database,
     database::{
-        DATABASE,
         record::{self, RecordResult},
+        DATABASE,
     },
     monitor::MonitorResult,
 };
@@ -66,9 +66,7 @@ pub async fn add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
             )
             .await
         }
-        MonitorResult::Down(info) => {
-            record::add(RecordResult::Down, None, mon_id, info).await
-        }
+        MonitorResult::Down(info) => record::add(RecordResult::Down, None, mon_id, info).await,
         MonitorResult::IoError(err) => record::add(RecordResult::Err, None, mon_id, err).await,
     }
 }

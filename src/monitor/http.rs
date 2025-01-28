@@ -1,5 +1,7 @@
 use std::{
-    collections::HashMap, error::Error, time::{Duration, Instant}
+    collections::HashMap,
+    error::Error,
+    time::{Duration, Instant},
 };
 
 use adler32::adler32;
@@ -147,7 +149,10 @@ pub async fn http_service(
     timeout: Duration,
     request_data: &HttpRequest,
 ) -> MonitorResult {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0")
+        .build()
+        .unwrap();
     let start_time = Instant::now();
     let res = client
         .request(request_data.method.to_reqwest(), url)
@@ -167,8 +172,15 @@ pub async fn http_service(
         }
     };
 
-    if CONFIG.get().unwrap().lock().await.http.fivexx_status_code_down
-        && (500..599).contains(&res.status().as_u16()) {
+    if CONFIG
+        .get()
+        .unwrap()
+        .lock()
+        .await
+        .http
+        .fivexx_status_code_down
+        && (500..599).contains(&res.status().as_u16())
+    {
         return MonitorResult::Down(format!("Server replied with status {}", res.status()));
     }
 

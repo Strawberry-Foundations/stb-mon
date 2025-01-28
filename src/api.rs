@@ -6,7 +6,7 @@ use axum::{
     http::StatusCode,
 };
 use axum_extra::extract::CookieJar;
-use base64::{Engine, prelude::BASE64_STANDARD};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use url::Url;
 
 use crate::{
@@ -14,9 +14,9 @@ use crate::{
     config::CONFIG,
     database,
     monitor::{
-        MonitorData,
         http::{self as http_mon, HeaderHashMap, HttpExpectedResponse, HttpMethod, HttpRequest},
         tcp::TcpExpectedResponse,
+        MonitorData,
     },
 };
 
@@ -70,8 +70,6 @@ pub async fn add_monitor_route(
         );
     };
 
-
-
     let Some(Ok(timeout_s)) = q.get("to").map(|to| to.parse::<u16>()) else {
         return (
             StatusCode::BAD_REQUEST,
@@ -90,14 +88,13 @@ pub async fn add_monitor_route(
         );
     }
 
-
     if timeout_s < 1 || timeout_s > 60 {
         return (
             StatusCode::BAD_REQUEST,
             "bad param `to` (timeout), must be within 1..60".to_string(),
         );
     }
-    
+
     let id = match q.get("ty").map(|s| s.as_str()) {
         None => {
             return (
@@ -272,7 +269,7 @@ pub async fn add_monitor_route(
                     },
                 },
                 interval_mins,
-                service_name
+                service_name,
             )
             .await
             {

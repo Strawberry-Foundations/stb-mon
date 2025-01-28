@@ -8,7 +8,11 @@ use crate::monitor::{Monitor, MonitorData};
 use super::DATABASE;
 
 // returns the id of the added monitor
-pub async fn add(service_data: MonitorData, interval_mins: u16, service_name: String) -> anyhow::Result<u64> {
+pub async fn add(
+    service_data: MonitorData,
+    interval_mins: u16,
+    service_name: String,
+) -> anyhow::Result<u64> {
     tracing::debug!(
         "Adding monitor - service_data: {service_data:?} | interval_mins: {interval_mins}"
     );
@@ -76,7 +80,6 @@ pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>
             let enabled: bool = r.get(3).unwrap();
             let service_name: String = r.get(4).unwrap();
 
-
             let mon = Monitor {
                 service_data,
                 service_name,
@@ -112,12 +115,10 @@ pub async fn toggle(id: u64) -> anyhow::Result<bool> {
         Err(e) => bail!(e),
     };
 
-    DATABASE
-        .lock()
-        .await
-        .execute("UPDATE monitors SET enabled = ? WHERE id = ?", params![
-            !enabled, id
-        ])?;
+    DATABASE.lock().await.execute(
+        "UPDATE monitors SET enabled = ? WHERE id = ?",
+        params![!enabled, id],
+    )?;
 
     Ok(!enabled)
 }

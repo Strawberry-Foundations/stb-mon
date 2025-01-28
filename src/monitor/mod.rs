@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub mod http;
 pub mod tcp;
 
+#[derive(Debug)]
 pub struct Monitor {
     pub service_data: MonitorData,
     pub service_name: String,
