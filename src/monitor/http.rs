@@ -27,6 +27,7 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
         if n_hyp >= 2 {
             return None;
         }
+
         if n_hyp == 0 {
             // single-status part
             if let Ok(n) = part.parse::<u16>() {
@@ -36,13 +37,14 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
                 return None;
             }
         }
+        
         // range part (x-y)
         let (start, end) = part.split_once("-").unwrap();
         let (Ok(start), Ok(end)) = (start.parse::<u16>(), end.parse::<u16>()) else {
             return None;
         };
 
-        if end > start {
+        if start > end {
             return None;
         }
 
@@ -166,7 +168,7 @@ pub async fn http_service(
         Ok(res) => res,
         Err(e) => {
             if e.is_timeout() {
-                return MonitorResult::Down("Connection timed out".to_string());
+                return MonitorResult::Down(format!("Connection timed out: {:?}", e.source()));
             }
             return MonitorResult::IoError(format!("reqwest threw error: {:?}", e.source()));
         }
