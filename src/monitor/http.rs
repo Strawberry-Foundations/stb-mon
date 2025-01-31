@@ -37,7 +37,7 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
                 return None;
             }
         }
-        
+
         // range part (x-y)
         let (start, end) = part.split_once("-").unwrap();
         let (Ok(start), Ok(end)) = (start.parse::<u16>(), end.parse::<u16>()) else {

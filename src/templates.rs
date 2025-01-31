@@ -139,7 +139,7 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         };
     );
 
-    if CONFIG.get().unwrap().lock().await.allow_guest {
+    if CONFIG.get().unwrap().lock().await.allow_guest && !is_logged_in {
         html! {
             (DOCTYPE);
             head {
