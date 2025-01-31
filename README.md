@@ -8,15 +8,15 @@
 This project is currently under development and is **not** ready for production use.
 
 ### Services
-[x] TCP services
-[x] HTTP/1.1 services
-[ ] UDP services
-[ ] ICMP monitors
+- [x] TCP services
+- [x] HTTP/1.1 services
+- [ ] UDP services
+- [ ] ICMP monitors
 
 ### Web UI
-[x] Start page with status of all monitors
-[x] Admin interface which allows you to add and manage monitors
-[ ] Monitor page where you can see the history of a monitor
+- [x] Start page with status of all monitors
+- [x] Admin interface which allows you to add and manage monitors
+- [ ] Monitor page where you can see the history of a monitor
 
 ## What is this?
 
