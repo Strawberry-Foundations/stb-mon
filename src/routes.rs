@@ -10,10 +10,22 @@ pub async fn favicon_route() -> (HeaderMap, Vec<u8>) {
     (hm, img)
 }
 
-pub async fn indexjs_route() -> String {
-    include_str!("../static/index.js").to_string()
+pub async fn indexjs_route() -> (HeaderMap, String) {
+    let hm = HeaderMap::from_iter(vec![(
+        CONTENT_TYPE,
+        HeaderValue::from_str("text/javascript").unwrap(),
+    )]);
+    let script = include_str!("../static/index.js").to_string();
+
+    (hm, script)
 }
 
-pub async fn adminjs_route() -> String {
-    include_str!("../static/admin.js").to_string()
+pub async fn adminjs_route() -> (HeaderMap, String) {
+    let hm = HeaderMap::from_iter(vec![(
+        CONTENT_TYPE,
+        HeaderValue::from_str("text/javascript").unwrap(),
+    )]);
+    let script = include_str!("../static/admin.js").to_string();
+    
+    (hm, script)
 }
