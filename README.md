@@ -7,6 +7,17 @@
 
 This project is currently under development and is **not** ready for production use.
 
+### Services
+[x] TCP services
+[x] HTTP/1.1 services
+[ ] UDP services
+[ ] ICMP monitors
+
+### Web UI
+[x] Start page with status of all monitors
+[x] Admin interface which allows you to add and manage monitors
+[ ] Monitor page where you can see the history of a monitor
+
 ## What is this?
 
 Strawberry Monitor is a simple uptime panel that allows you to monitor the uptime of services. As of writing this, it only supports TCP and HTTP, but UDP and ICMP support is planned.
