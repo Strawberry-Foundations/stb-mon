@@ -243,10 +243,10 @@ pub async fn add_monitor_route(
                 let Some(hhm) = HeaderHashMap::try_parse_str(&headers) else {
                     return (
                         StatusCode::BAD_REQUEST,
-                        "bad param `hds` (headers), failed to parse".to_string()
+                        "bad param `hds` (headers), failed to parse".to_string(),
                     );
                 };
-                
+
                 hhm
             } else {
                 HeaderHashMap::default()

@@ -8,33 +8,32 @@ use axum_extra::extract::CookieJar;
 use itertools::Itertools;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
 
-static NEWCSS: PreEscaped<&'static str> = PreEscaped(
-    r#"
-<link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
-<style>
-    body {
-        max-width: 65%;
-    }
+#[rustfmt::skip]
+static NEWCSS: PreEscaped<&'static str> = PreEscaped(concat!(
+r#"<link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">"#,
+r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">"#,
+"<style>",
+    "body {",
+        "max-width: 65%;",
+    "}",
 
-    #addform {
-        input {
-            min-width: 30%;
-            display: block;
-        }
+    "#addform {",
+        "input {",
+            "min-width: 30%;",
+            "display: block;",
+        "}",
 
-        label {
-            margin-down: 3px;
-            display: block;
-        }
-    }
+        "label {",
+            "margin-down: 3px;",
+            "display: block;",
+        "}",
+    "}",
     
-    .down {
-        background-color: rgba(255, 0, 0, 0.4);
-    }
-</style>
-"#,
-);
+    ".down {",
+        "background-color: rgba(255, 0, 0, 0.4);",
+    "}",
+"</style>"
+));
 
 async fn render_monitor_list(admin: bool) -> Markup {
     let mons = database::monitor::get_all(false).await.unwrap();
@@ -163,6 +162,7 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
         html!(
             (DOCTYPE)
             head {
+                (NEWCSS)
                 script src="/index.js" {};
                 title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
@@ -172,8 +172,7 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
                     h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
                     (pw_input)
                 }
-                @if is_logged_in { p { "Log in to see this" } }
-                @else { a href="/admin" { "Go to admin page" } }
+                p { "Log in to see this" }
             }
         )
     }
@@ -267,7 +266,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
                             label for="url" { "URL" }
                             input #url placeholder="https://example.com";
-                            
+
                             label for="headers" { "Request headers" }
                             textarea #headers {}
 
