@@ -43,7 +43,7 @@ use crate::{
 //          co (opt): status codes
 //          bch: response body adler32 hash
 // met: http method, must be one of {get, post, put, delete, options, head, trace, connect, patch} (GET if not given)
-// hds: header map, looks like this: content-type:application/json,accept:*/* (empty if not given)
+// hds: header map, looks like this: content-type:application/json\naccept:*/* (empty if not given)
 // body: base64 encoded request body (empty if none given)
 pub async fn add_monitor_route(
     q: Query<HashMap<String, String>>,
@@ -240,10 +240,14 @@ pub async fn add_monitor_route(
             };
 
             let headers = if let Some(headers) = q.get("hds") {
-                return (
-                    StatusCode::IM_A_TEAPOT,
-                    "header map parameter is not yet implemented".to_string(),
-                );
+                let Some(hhm) = HeaderHashMap::try_parse_str(&headers) else {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        "bad param `hds` (headers), failed to parse".to_string()
+                    );
+                };
+                
+                hhm
             } else {
                 HeaderHashMap::default()
             };

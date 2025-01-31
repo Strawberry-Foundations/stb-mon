@@ -266,6 +266,9 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
                             label for="url" { "URL" }
                             input #url placeholder="https://example.com";
+                            
+                            label for="headers" { "Request headers" }
+                            textarea #headers {}
 
                             label for="expected-response" { "Expected response" }
                             select #http-expected-response onchange="onHttpExpectedResponseChange()" {

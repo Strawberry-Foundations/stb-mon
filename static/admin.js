@@ -74,10 +74,11 @@ async function onAdd() {
         case "http": {
             let method = elem("method").value;
             let serviceUrl = elem("url").value;
+            let headers = elem("headers").value.trim();
             let expectedResponse = elem("http-expected-response").value;
             let requestBody = elem("request-body").value;
             
-            url += `&url=${uriEnc(serviceUrl)}&exre=${expectedResponse}&body=${btoa(requestBody)}`
+            url += `&url=${uriEnc(serviceUrl)}&hds=${uriEnc(headers)}&exre=${expectedResponse}&body=${btoa(requestBody)}`
 
             switch (expectedResponse) {
                 case "any": {

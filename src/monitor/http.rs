@@ -107,6 +107,25 @@ impl HttpMethod {
 pub struct HeaderHashMap(HashMap<String, String>);
 
 impl HeaderHashMap {
+    pub fn try_parse_str(val: &str) -> Option<Self> {
+        let mut headers = HashMap::new();
+        let lines = val.lines();
+
+        for header in lines {
+            let Some((k, v)) = header.split_once(":") else {
+                return None;
+            };
+            headers.insert(k.trim().to_string(), v.trim().to_string());
+        }
+
+        let hhm = Self(headers);
+        if Self::to_reqwest(&hhm).is_none() {
+            return None;
+        }
+        
+        Some(hhm)
+    }
+
     pub fn to_reqwest(&self) -> Option<reqwest::header::HeaderMap> {
         let mut hm = reqwest::header::HeaderMap::new();
         for (h, v) in &self.0 {
@@ -151,11 +170,9 @@ pub async fn http_service(
     timeout: Duration,
     request_data: &HttpRequest,
 ) -> MonitorResult {
-    let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0")
-        .build()
-        .unwrap();
     let start_time = Instant::now();
+
+    let client = reqwest::Client::new();
     let res = client
         .request(request_data.method.to_reqwest(), url)
         .headers(request_data.headers.to_reqwest().unwrap())
