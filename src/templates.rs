@@ -28,10 +28,6 @@ r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css
             "display: block;",
         "}",
     "}",
-    
-    ".down {",
-        "background-color: rgba(255, 0, 0, 0.4);",
-    "}",
 "</style>"
 ));
 
