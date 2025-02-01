@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     config::init_config(config_path)
         .await
         .context("Failed to initialize config")?;
-    
+
     let app = Router::new()
         .route("/", get(templates::index_template))
         .route("/admin", get(templates::admin_template))

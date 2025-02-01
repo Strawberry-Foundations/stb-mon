@@ -91,7 +91,7 @@ pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>
                 enabled,
                 timeout_secs,
             };
-            
+
             Ok((id, mon))
         })
         .collect()

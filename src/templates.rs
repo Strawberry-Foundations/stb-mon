@@ -1,6 +1,7 @@
 use crate::{
     config::CONFIG,
-    database::{self, record::RecordResult}, monitor::Monitor,
+    database::{self, record::RecordResult},
+    monitor::Monitor,
 };
 
 use axum::{extract::Path, http::StatusCode};
@@ -126,7 +127,7 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
     let allow_guest = CONFIG.get().unwrap().lock().await.allow_guest;
     let can_view = allow_guest || (!allow_guest && is_logged_in);
-    
+
     let render = html! {
         (DOCTYPE);
         head {
@@ -134,7 +135,7 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
             script src="/index.js" {};
             title { (CONFIG.get().unwrap().lock().await.instance_name) }
         }
-        
+
         body {
             header {
                 h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
@@ -147,7 +148,7 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
                         p { "You are logged in - " a href="/admin" { "ADMIN" } }
                     }
                 };
-            
+
             }
 
             @if can_view {
@@ -362,10 +363,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
             }
         );
 
-        return (
-            StatusCode::NOT_FOUND,
-            render,
-        );
+        return (StatusCode::NOT_FOUND, render);
     };
 
     let render = html!(

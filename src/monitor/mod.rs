@@ -50,15 +50,17 @@ impl MonitorData {
     // Running a service will execute the logic of the service and put its results into the database
     pub async fn run(&self, timeout_s: u16) -> MonitorResult {
         match self {
-            Self::Tcp {
-                addr,
-                expected,
-            } => tcp::tcp_service(addr, expected, Duration::from_secs(timeout_s as _)).await,
+            Self::Tcp { addr, expected } => {
+                tcp::tcp_service(addr, expected, Duration::from_secs(timeout_s as _)).await
+            }
             Self::Http {
                 url,
                 expected,
                 request,
-            } => http::http_service(url, expected, Duration::from_secs(timeout_s as _), request).await,
+            } => {
+                http::http_service(url, expected, Duration::from_secs(timeout_s as _), request)
+                    .await
+            }
         }
     }
 
@@ -78,11 +80,19 @@ impl MonitorData {
                 hm.insert("Socket Address".to_string(), addr.to_string());
                 hm.insert("Expected Response".to_string(), format!("{expected:?}"));
             }
-            Self::Http { url, request, expected } => {
+            Self::Http {
+                url,
+                request,
+                expected,
+            } => {
                 hm.insert("URL".to_string(), url.to_string());
                 hm.insert("Method".to_string(), format!("{:?}", request.method));
-                hm.insert("Headers".to_string(), format!("{:?}", request.headers.to_reqwest().unwrap()));
-                let body = String::from_utf8(request.body.clone()).unwrap_or_else(|_| "binary".to_string());
+                hm.insert(
+                    "Headers".to_string(),
+                    format!("{:?}", request.headers.to_reqwest().unwrap()),
+                );
+                let body = String::from_utf8(request.body.clone())
+                    .unwrap_or_else(|_| "binary".to_string());
                 hm.insert("Body".to_string(), body);
                 hm.insert("Expected response".to_string(), format!("{expected:?}"));
             }

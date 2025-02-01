@@ -243,7 +243,8 @@ pub async fn add_monitor_route(
                 if headers.len() > 2048 {
                     return (
                         StatusCode::BAD_REQUEST,
-                        "bad param `hds` (headers), must be at most 2048 characters long".to_string(),
+                        "bad param `hds` (headers), must be at most 2048 characters long"
+                            .to_string(),
                     );
                 }
                 let Some(hhm) = HeaderHashMap::try_parse_str(&headers) else {
