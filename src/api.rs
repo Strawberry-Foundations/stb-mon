@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, str::FromStr, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, str::FromStr};
 
 use axum::{
     extract::{Path, Query},
@@ -133,10 +133,10 @@ pub async fn add_monitor_route(
                 MonitorData::Tcp {
                     addr: socket_addr,
                     expected: expected_response,
-                    timeout: Duration::from_secs(timeout_s as _),
                 },
                 interval_mins,
                 service_name,
+                timeout_s,
             )
             .await
             {
@@ -240,6 +240,12 @@ pub async fn add_monitor_route(
             };
 
             let headers = if let Some(headers) = q.get("hds") {
+                if headers.len() > 2048 {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        "bad param `hds` (headers), must be at most 2048 characters long".to_string(),
+                    );
+                }
                 let Some(hhm) = HeaderHashMap::try_parse_str(&headers) else {
                     return (
                         StatusCode::BAD_REQUEST,
@@ -264,7 +270,6 @@ pub async fn add_monitor_route(
                 MonitorData::Http {
                     url,
                     expected: expected_response,
-                    timeout: Duration::from_secs(timeout_s as _),
                     request: HttpRequest {
                         method,
                         headers,
@@ -273,6 +278,7 @@ pub async fn add_monitor_route(
                 },
                 interval_mins,
                 service_name,
+                timeout_s,
             )
             .await
             {
@@ -294,7 +300,7 @@ pub async fn add_monitor_route(
     };
 
     let mon = database::monitor::get_by_id(id).await.unwrap();
-    let res = mon.service_data.run().await;
+    let res = mon.service_data.run(mon.timeout_secs).await;
     checker::add_result(res, id).await.unwrap();
 
     (StatusCode::CREATED, "Monitor was added".to_string())

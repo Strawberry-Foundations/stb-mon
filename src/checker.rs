@@ -46,7 +46,7 @@ async fn run_pending_checks() {
             continue;
         };
         if last_record + 60 * mon.interval_mins < now {
-            let res = mon.service_data.run().await;
+            let res = mon.service_data.run(mon.timeout_secs).await;
             add_result(res, mon_id).await.unwrap();
         }
     }

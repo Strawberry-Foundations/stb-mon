@@ -1,9 +1,9 @@
 use crate::{
     config::CONFIG,
-    database::{self, record::RecordResult},
+    database::{self, record::RecordResult}, monitor::Monitor,
 };
 
-use axum::http::StatusCode;
+use axum::{extract::Path, http::StatusCode};
 use axum_extra::extract::CookieJar;
 use itertools::Itertools;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
@@ -40,17 +40,19 @@ async fn render_monitor_list(admin: bool) -> Markup {
     html!(
         table {
             caption { "Monitors" }
-            thead { tr {
-                @if admin { th scope="col" { "ID" } }
-                th scope="col" { "Service name" }
-                th scope="col" { "Service location" }
-                th scope="col" { "Last checked" }
-                th scope="col" { "Interval" }
-                @if admin {
-                    th scope="col" { "Enabled" }
-                    th scope="col" { "Actions" }
+            thead {
+                tr {
+                    @if admin { th scope="col" { "ID" } }
+                    th scope="col" { "Service name" }
+                    th scope="col" { "Service location" }
+                    th scope="col" { "Last checked" }
+                    th scope="col" { "Interval" }
+                    @if admin {
+                        th scope="col" { "Enabled" }
+                        th scope="col" { "Actions" }
+                    }
                 }
-            } }
+            }
             tbody {
                 @for (id, mon) in mons {
                     @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
@@ -114,7 +116,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
     )
 }
 
-pub async fn index_template(cookies: CookieJar) -> Markup {
+pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
     let is_logged_in = match cookies.get("token") {
         None => false,
         Some(c) => database::session::is_valid(c.value())
@@ -122,56 +124,50 @@ pub async fn index_template(cookies: CookieJar) -> Markup {
             .unwrap_or_default(),
     };
 
-    let pw_input = html!(
-        div style="position: absolute; top: 5px; right: 5px" {
-            @if !is_logged_in {
-                label for="password" { "Login: " }
-                input #password placeholder="Password" type="password";
-                button style="background: #181818" onclick="onLogin()" { "OK" }
-            } @else {
-                p { "You are logged in - " a href="/admin" { "ADMIN" } }
-            }
-        };
-    );
-
     let allow_guest = CONFIG.get().unwrap().lock().await.allow_guest;
-    if allow_guest || (!allow_guest && is_logged_in) {
-        html! {
-            (DOCTYPE);
-            head {
-                (NEWCSS)
-                script src="/index.js" {};
-                title { (CONFIG.get().unwrap().lock().await.instance_name) }
+    let can_view = allow_guest || (!allow_guest && is_logged_in);
+    
+    let render = html! {
+        (DOCTYPE);
+        head {
+            (NEWCSS)
+            script src="/index.js" {};
+            title { (CONFIG.get().unwrap().lock().await.instance_name) }
+        }
+        
+        body {
+            header {
+                h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
+                div style="position: absolute; top: 5px; right: 5px" {
+                    @if !is_logged_in {
+                        label for="password" { "Login: " }
+                        input #password placeholder="Password" type="password";
+                        button style="background: #181818" onclick="onLogin()" { "OK" }
+                    } @else {
+                        p { "You are logged in - " a href="/admin" { "ADMIN" } }
+                    }
+                };
+            
             }
 
-            body {
-                header {
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
-                    (pw_input)
-                }
-                p {
+            @if can_view {
+                body {
                     (render_monitor_list(false).await)
                 }
             }
-        }
-    } else {
-        html!(
-            (DOCTYPE)
-            head {
-                (NEWCSS)
-                script src="/index.js" {};
-                title { (CONFIG.get().unwrap().lock().await.instance_name) }
-            }
-
-            body {
-                header {
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
-                    (pw_input)
-                }
+            @else {
                 p { "Log in to see this" }
             }
-        )
-    }
+        }
+    };
+
+    let status = if can_view {
+        StatusCode::OK
+    } else {
+        StatusCode::UNAUTHORIZED
+    };
+
+    (status, render)
 }
 
 pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
@@ -190,7 +186,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
             }
 
             body {
-                header { "Unauthorized" }
+                header { h1 { "Unauthorized" } }
                 p { "Please log in to see this page" }
                 a href="/" { "Back to main page" }
             }
@@ -299,4 +295,109 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
     );
 
     (StatusCode::OK, render)
+}
+
+async fn render_monitor_info(mon: Monitor) -> Markup {
+    html!(
+        div {
+            style scoped { "th { width: 0; white-space: nowrap }" }
+
+            table {
+                caption { "General" }
+                tr {
+                    th { "Service name" }
+                    td { (mon.service_name) }
+                }
+                tr {
+                    th { "Service location" }
+                    td { (mon.service_data.service_location_str()) }
+                }
+                tr {
+                    th { "Enabled" }
+                    td { (mon.enabled) }
+                }
+                tr {
+                    th { "Check interval" }
+                    td { (mon.interval_mins) "min" }
+                }
+                tr {
+                    th { "Timeout" }
+                    td { (mon.timeout_secs) "s" }
+                }
+            }
+
+            table {
+                caption { "Monitor-specific" }
+                @for (k, v) in mon.service_data.as_hashmap().into_iter().sorted() {
+                    tr {
+                        th { (k) }
+                        td { (v) }
+                    }
+                }
+            }
+        }
+    )
+}
+
+pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (StatusCode, Markup) {
+    let is_logged_in = match cookies.get("token") {
+        None => false,
+        Some(c) => database::session::is_valid(c.value())
+            .await
+            .unwrap_or_default(),
+    };
+
+    let allow_guest = CONFIG.get().unwrap().lock().await.allow_guest;
+    let can_view = allow_guest || (!allow_guest && is_logged_in);
+
+    let Some(monitor) = database::monitor::get_by_id(*monitor_id).await else {
+        let render = html!(
+            head {
+                (NEWCSS)
+            }
+
+            body {
+                header { h1 { "404 Not Found" } }
+                p { "A monitor with this ID was not found" }
+            }
+        );
+
+        return (
+            StatusCode::NOT_FOUND,
+            render,
+        );
+    };
+
+    let render = html!(
+        head {
+            (NEWCSS)
+            @if can_view { title { "Monitor " (monitor_id.to_string()) } }
+            @else { title { "Unauthorized" } }
+        }
+
+        @if can_view {
+            header {
+                @let mon_name = if monitor.service_name.is_empty() {
+                    &monitor.service_data.service_location_str()
+                } else {
+                    &monitor.service_name
+                };
+                @let mon_name = mon_name.split_at_checked(24).map(|s| s.0).unwrap_or(&mon_name);
+
+                h1 { "Monitor info: " (mon_name) }
+            }
+            (render_monitor_info(monitor).await)
+        }
+        @else {
+            header { h1 { "Unauthorized" } }
+        }
+    );
+
+    let status = if can_view {
+        StatusCode::OK
+    } else {
+        StatusCode::UNAUTHORIZED
+    };
+
+    (status, render)
 }

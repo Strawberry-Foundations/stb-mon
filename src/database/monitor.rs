@@ -12,6 +12,7 @@ pub async fn add(
     service_data: MonitorData,
     interval_mins: u16,
     service_name: String,
+    timeout_s: u16,
 ) -> anyhow::Result<u64> {
     tracing::debug!(
         "Adding monitor - service_data: {service_data:?} | interval_mins: {interval_mins}"
@@ -19,8 +20,8 @@ pub async fn add(
     let service_data = rmp_serde::to_vec(&service_data)?;
     let db = DATABASE.lock().await;
     db.execute(
-        "INSERT INTO monitors (serviceDataMp, intervalMins, serviceName) VALUES (?, ?, ?)",
-        params![service_data, interval_mins, service_name],
+        "INSERT INTO monitors (serviceDataMp, intervalMins, serviceName, timeoutSecs) VALUES (?, ?, ?, ?)",
+        params![service_data, interval_mins, service_name, timeout_s],
     )?;
 
     let id = db.query_row(
@@ -37,7 +38,7 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
         .lock()
         .await
         .query_row(
-            "SELECT serviceDataMp, intervalMins, enabled, serviceName FROM monitors WHERE id = ?",
+            "SELECT serviceDataMp, intervalMins, enabled, serviceName, timeoutSecs FROM monitors WHERE id = ?",
             [id],
             |r| {
                 let service_data: Vec<u8> = r.get(0).unwrap();
@@ -45,12 +46,14 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
                 let interval_mins: u64 = r.get(1).unwrap();
                 let enabled: bool = r.get(2).unwrap();
                 let service_name: String = r.get(3).unwrap();
+                let timeout_secs: u16 = r.get(4).unwrap();
 
                 let mon = Monitor {
                     service_data,
                     service_name,
                     interval_mins,
                     enabled,
+                    timeout_secs,
                 };
                 Ok(mon)
             },
@@ -63,7 +66,7 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
 pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
     let mut stmt = lock.prepare(&format!(
-        "SELECT id, serviceDataMp, intervalMins, enabled, serviceName FROM monitors {}",
+        "SELECT id, serviceDataMp, intervalMins, enabled, serviceName, timeoutSecs FROM monitors {}",
         if enabled_only {
             "WHERE enabled = 1"
         } else {
@@ -79,17 +82,21 @@ pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>
             let interval_mins: u64 = r.get(2).unwrap();
             let enabled: bool = r.get(3).unwrap();
             let service_name: String = r.get(4).unwrap();
+            let timeout_secs: u16 = r.get(5).unwrap();
 
             let mon = Monitor {
                 service_data,
                 service_name,
                 interval_mins,
                 enabled,
+                timeout_secs,
             };
+            
             Ok((id, mon))
         })
         .collect()
         .unwrap();
+
     Ok(res)
 }
 
@@ -101,10 +108,12 @@ pub async fn util_delete(id: u64) -> anyhow::Result<()> {
     if affected == 0 {
         bail!("No such monitor")
     }
+
     DATABASE
         .lock()
         .await
         .execute("DELETE FROM records WHERE monitorId = ?", [id])?;
+
     Ok(())
 }
 
