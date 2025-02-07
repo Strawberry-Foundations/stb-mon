@@ -1,9 +1,3 @@
-use axum::extract::Path;
-use axum_extra::extract::CookieJar;
-use itertools::Itertools;
-use maud::{html, Markup, PreEscaped, DOCTYPE};
-use reqwest::StatusCode;
-
 use crate::{
     config::CONFIG,
     database::{
@@ -15,9 +9,16 @@ use crate::{
     time_util::{self, current_unix_time},
 };
 
+use axum::extract::Path;
+use axum_extra::extract::CookieJar;
+use itertools::Itertools;
+use maud::{html, Markup, PreEscaped, DOCTYPE};
+use reqwest::StatusCode;
+
 #[allow(clippy::let_unit_value)]
 async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
     let time = current_unix_time();
+
     let Ok(records) = database::record::records_from_mon(mon_id).await else {
         return html!(p { (format!("Internal server error")) });
     };
@@ -80,23 +81,27 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     @let last_record = records_last_30d.first().unwrap();
                     @let (msg, color) = result_to_text_color(&last_record.result);
                     @let last_different_status = records.iter().find(|r| r.result != last_record.result);
+
                     @let status_since = if let Some(ds) = last_different_status {
                         ds.time_checked
                     } else {
                         records.last().unwrap().time_checked
                     };
+
                     td { span style={ "color:" (color) } { (msg) } " since " (time_util::time_diff_now(status_since as _)) }
                     td { (last_record.response_time_ms.unwrap_or_default()) "ms" }
                 }
 
                 @let first_record_time = records_last_30d.last().unwrap().time_checked;
-                @for (timespan, t) in [("4h", 60 * 60 * 4),
+                @for (timespan, t) in [
+                    ("4h", 60 * 60 * 4),
                     ("12h", 60 * 60 * 12),
                     ("24h", 60 * 60 * 24),
                     ("72h", 60 * 60 * 72),
                     ("7d", 60 * 60 * 24 * 7),
                     ("14d", 60 * 60 * 24 * 14),
-                    ("30d", 60 * 60 * 24 * 30)].iter().filter(|(_, t)| *t < time_util::current_unix_time() - first_record_time) {
+                    ("30d", 60 * 60 * 24 * 30)
+                    ].iter().filter(|(_, t)| *t < time_util::current_unix_time() - first_record_time) {
                     tr {
                         th scope="row" { "Last " (timespan) }
                         @let records = records_last_30d.iter().filter(|r| r.time_checked > time - t).collect::<Vec<&&MonitorRecord>>();
@@ -118,10 +123,12 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                         @let perc_err = amount_err / records.len() as f32 * 100.;
 
                         @let mut statuses: Vec<String> = vec![];
-                        @for (s, p) in [(RecordResult::Ok, perc_ok),
+                        @for (s, p) in [
+                            (RecordResult::Ok, perc_ok),
                             (RecordResult::Unexpected, perc_ux),
                             (RecordResult::Down, perc_down),
-                            (RecordResult::Err, perc_err)] {
+                            (RecordResult::Err, perc_err)
+                            ] {
                             @if p > 0. {
                                 @let (msg, color) = result_to_text_color(&s);
                                 @let _ = statuses.push(html!(span style={ "color:" (color) } { (format!("{p:.2}")) "% " (msg) }).into_string());
@@ -131,6 +138,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                         td { (PreEscaped(statuses.join(" "))) }
 
                         @let response_times = records.iter().filter_map(|r| r.response_time_ms).collect::<Vec<u64>>();
+                        
                         @if response_times.is_empty() {
                             td { "N/A" }
                         } @else {

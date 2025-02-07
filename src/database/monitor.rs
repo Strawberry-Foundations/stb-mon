@@ -17,8 +17,10 @@ pub async fn add(
     tracing::debug!(
         "Adding monitor - service_data: {service_data:?} | interval_mins: {interval_mins}"
     );
+
     let service_data = rmp_serde::to_vec(&service_data)?;
     let db = DATABASE.lock().await;
+    
     db.execute(
         "INSERT INTO monitors (serviceDataMp, intervalMins, serviceName, timeoutSecs) VALUES (?, ?, ?, ?)",
         params![service_data, interval_mins, service_name, timeout_s],

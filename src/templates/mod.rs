@@ -52,6 +52,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
         .into_iter()
         .sorted_by(|(i1, _), (i2, _)| i1.cmp(i2))
         .sorted_by(|(_, m1), (_, m2)| m2.enabled.cmp(&m1.enabled));
+
     html!(
         table {
             caption { "Monitors" }
@@ -73,6 +74,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                     @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
                         continue;
                     };
+                    
                     @let background_color = match last_record.result {
                         RecordResult::Ok => "rgba(0, 0, 0, 0)",
                         RecordResult::Unexpected => "rgba(245, 204, 0, 0.1)",

@@ -124,6 +124,7 @@ impl HeaderHashMap {
 
     pub fn to_reqwest(&self) -> Option<reqwest::header::HeaderMap> {
         let mut hm = reqwest::header::HeaderMap::new();
+
         for (h, v) in &self.0 {
             let Ok(name) = HeaderName::from_lowercase(h.to_lowercase().as_bytes()) else {
                 return None;
@@ -169,6 +170,7 @@ pub async fn http_service(
     let start_time = Instant::now();
 
     let client = reqwest::Client::new();
+
     let res = client
         .request(request_data.method.to_reqwest(), url)
         .headers(request_data.headers.to_reqwest().unwrap())

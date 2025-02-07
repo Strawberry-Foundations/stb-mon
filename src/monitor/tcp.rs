@@ -24,6 +24,7 @@ pub async fn tcp_service(
     timeout: Duration,
 ) -> MonitorResult {
     let start_time = Instant::now();
+    
     let mut conn =
         match tokio::time::timeout(timeout, async { TcpStream::connect(addr).await }).await {
             Ok(Ok(conn)) => conn,

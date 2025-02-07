@@ -8,9 +8,12 @@ use std::iter::repeat_with;
 pub async fn create() -> anyhow::Result<String> {
     let token: String = repeat_with(fastrand::alphanumeric).take(12).collect();
     let mut hasher = Sha256::new();
+    
     hasher.update(&token);
+
     let hash = hex::encode(hasher.finalize());
     let expiry = current_unix_time() + 60 * 60 * 24 * 7; // token is valid for 7 days
+
     DATABASE.lock().await.execute(
         "INSERT INTO sessions (token, expiresAt) VALUES (?, ?)",
         params![hash, expiry],

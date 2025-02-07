@@ -41,9 +41,11 @@ pub async fn init_config(path: String) -> anyhow::Result<()> {
 
     let file = fs::read_to_string(path).await?;
     let config = toml::from_str::<Config>(&file)?;
+
     if config.password.len() != 256 / 4 || config.password.chars().any(|c| !c.is_ascii_hexdigit()) {
         bail!("Password is not a valid SHA256")
     }
+    
     CONFIG.set(Arc::new(Mutex::new(config))).unwrap();
 
     Ok(())
