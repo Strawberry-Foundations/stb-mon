@@ -1,6 +1,9 @@
 use crate::{
     config::CONFIG,
-    database::{self, record::{MonitorRecord, RecordResult}},
+    database::{
+        self,
+        record::{MonitorRecord, RecordResult},
+    },
     monitor::Monitor,
     time_util::{self, current_unix_time},
 };
@@ -305,13 +308,14 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
 
 async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
     let time = current_unix_time();
-    let Ok(records) =
-        database::record::records_from_mon(mon_id).await
-    else {
+    let Ok(records) = database::record::records_from_mon(mon_id).await else {
         return html!(p { (format!("Internal server error")) });
     };
 
-    let records_last_30d = records.iter().filter(|r| r.time_checked >= 60 * 60 * 24 * 30).collect::<Vec<&MonitorRecord>>();
+    let records_last_30d = records
+        .iter()
+        .filter(|r| r.time_checked >= 60 * 60 * 24 * 30)
+        .collect::<Vec<&MonitorRecord>>();
 
     html!(
         div {
@@ -377,12 +381,12 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                         td { (last_record.response_time_ms.unwrap_or_default()) "ms" }
                     }
                 }
-                
+
                 // 24h
                 tr {
                     th scope="row" { "Last 24h" }
                     @let records_last_24h = records_last_30d.iter().filter(|r| r.time_checked > time - 60 * 60 * 24).collect::<Vec<&&MonitorRecord>>();
-                    
+
                     @let (amount_ok, amount_ux, amount_down, amount_err) = records_last_24h.iter().fold((0f32, 0f32, 0f32, 0f32), |mut amounts, r| {
                         match r.result {
                             RecordResult::Ok => amounts.0 += 1.,
