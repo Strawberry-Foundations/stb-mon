@@ -4,6 +4,7 @@ use rusqlite::{fallible_iterator::FallibleIterator, params};
 use super::DATABASE;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct MonitorRecord {
     pub time_checked: u64,
     pub result: RecordResult,
