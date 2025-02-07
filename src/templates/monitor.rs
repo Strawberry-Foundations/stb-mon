@@ -101,7 +101,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     ("7d", 60 * 60 * 24 * 7),
                     ("14d", 60 * 60 * 24 * 14),
                     ("30d", 60 * 60 * 24 * 30)
-                    ].iter().filter(|(_, t)| *t < time_util::current_unix_time() - first_record_time) {
+                ].iter().filter(|(_, t)| *t < time_util::current_unix_time() - first_record_time) {
                     tr {
                         th scope="row" { "Last " (timespan) }
                         @let records = records_last_30d.iter().filter(|r| r.time_checked > time - t).collect::<Vec<&&MonitorRecord>>();
