@@ -128,7 +128,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                             (RecordResult::Unexpected, perc_ux),
                             (RecordResult::Down, perc_down),
                             (RecordResult::Err, perc_err)
-                            ] {
+                        ] {
                             @if p > 0. {
                                 @let (msg, color) = result_to_text_color(&s);
                                 @let _ = statuses.push(html!(span style={ "color:" (color) } { (format!("{p:.2}")) "% " (msg) }).into_string());
