@@ -95,7 +95,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                         td {
                             @let (msg, color) = result_to_text_color(&last_record.result);
                             (time_util::time_diff_now(last_record.time_checked as i64))
-                            "ago ("
+                            " ago ("
                             span title=(last_record.info) style={ "color: " (color) } {
                                 (msg)
                             }
