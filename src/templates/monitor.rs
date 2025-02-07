@@ -112,7 +112,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     ] {
                         @if p > 0. {
                             @let (msg, color) = result_to_text_color(&s);
-                            @let _ = statuses.push(html!(span style={ "color:" (color) } { (p) "% " (msg) }).into_string());
+                            @let _ = statuses.push(html!(span style={ "color:" (color) } { (format!("{p:.2}")) "% " (msg) }).into_string());
                         }
                     }
 
@@ -124,7 +124,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     } @else {
                         @let lowest_response_time = response_times.iter().min().unwrap();
                         @let highest_response_time = response_times.iter().max().unwrap();
-                        @let avg_response_time = response_times.iter().sum::<u64>() as f32 / records_last_24h.len() as f32;
+                        @let avg_response_time = response_times.iter().sum::<u64>() / records_last_24h.len() as u64;
 
                         td { "L: " (lowest_response_time) "ms H: " (highest_response_time) "ms Avg: " (avg_response_time) "ms" }
                     }
