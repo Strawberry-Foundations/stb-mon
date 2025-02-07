@@ -112,16 +112,12 @@ impl HeaderHashMap {
         let lines = val.lines();
 
         for header in lines {
-            let Some((k, v)) = header.split_once(":") else {
-                return None;
-            };
+            let (k, v) = header.split_once(":")?;
             headers.insert(k.trim().to_string(), v.trim().to_string());
         }
 
         let hhm = Self(headers);
-        if Self::to_reqwest(&hhm).is_none() {
-            return None;
-        }
+        Self::to_reqwest(&hhm)?;
 
         Some(hhm)
     }
