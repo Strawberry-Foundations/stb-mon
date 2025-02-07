@@ -1,7 +1,8 @@
 use crate::{
     config::CONFIG,
-    database::{self, record::RecordResult},
+    database::{self, record::{MonitorRecord, RecordResult}},
     monitor::Monitor,
+    time_util::{self, current_unix_time},
 };
 
 use axum::{extract::Path, http::StatusCode};
@@ -31,6 +32,15 @@ r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css
     "}",
 "</style>"
 ));
+
+fn result_to_text_color(res: &RecordResult) -> (&'static str, &'static str) {
+    match res {
+        RecordResult::Ok => ("Up", "#6fff31"),
+        RecordResult::Unexpected => ("UX", "#f48421"),
+        RecordResult::Down => ("Down", "#cb0b0b"),
+        RecordResult::Err => ("Err", "#550505"),
+    }
+}
 
 async fn render_monitor_list(admin: bool) -> Markup {
     let mons = database::monitor::get_all(false).await.unwrap();
@@ -80,14 +90,9 @@ async fn render_monitor_list(admin: bool) -> Markup {
                             }
                         }
                         td {
-                            @let (msg, color) = match last_record.result {
-                                RecordResult::Ok => ("Up", "#6fff31"),
-                                RecordResult::Unexpected => ("UX", "#f48421"),
-                                RecordResult::Down => ("Down", "#cb0b0b"),
-                                RecordResult::Err => ("Err", "#550505"),
-                            };
-                            (crate::time_util::time_rel(last_record.time_checked as i64))
-                            " ("
+                            @let (msg, color) = result_to_text_color(&last_record.result);
+                            (time_util::time_diff_now(last_record.time_checked as i64))
+                            "ago ("
                             span title=(last_record.info) style={ "color: " (color) } {
                                 (msg)
                             }
@@ -298,7 +303,16 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
     (StatusCode::OK, render)
 }
 
-async fn render_monitor_info(mon: Monitor) -> Markup {
+async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
+    let time = current_unix_time();
+    let Ok(records) =
+        database::record::records_from_mon(mon_id).await
+    else {
+        return html!(p { (format!("Internal server error")) });
+    };
+
+    let records_last_30d = records.iter().filter(|r| r.time_checked >= 60 * 60 * 24 * 30).collect::<Vec<&MonitorRecord>>();
+
     html!(
         div {
             style scoped { "th { width: 0; white-space: nowrap }" }
@@ -306,23 +320,23 @@ async fn render_monitor_info(mon: Monitor) -> Markup {
             table {
                 caption { "General" }
                 tr {
-                    th { "Service name" }
+                    th scope="row" { "Service name" }
                     td { (mon.service_name) }
                 }
                 tr {
-                    th { "Service location" }
+                    th scope="row" { "Service location" }
                     td { (mon.service_data.service_location_str()) }
                 }
                 tr {
-                    th { "Enabled" }
+                    th scope="row" { "Enabled" }
                     td { (mon.enabled) }
                 }
                 tr {
-                    th { "Check interval" }
+                    th scope="row" { "Check interval" }
                     td { (mon.interval_mins) "min" }
                 }
                 tr {
-                    th { "Timeout" }
+                    th scope="row" { "Timeout" }
                     td { (mon.timeout_secs) "s" }
                 }
             }
@@ -333,6 +347,82 @@ async fn render_monitor_info(mon: Monitor) -> Markup {
                     tr {
                         th { (k) }
                         td { (v) }
+                    }
+                }
+            }
+
+            table {
+                caption { "Uptime" }
+                thead {
+                    tr {
+                        th scope="col" { "Time span" };
+                        th scope="col" { "Status" }
+                        th scope="col" { "Response time" }
+                    }
+                }
+
+                @let first_record_time = records_last_30d.last().unwrap().time_checked;
+                tbody {
+                    tr {
+                        th scope="row" { "Current" }
+                        @let last_record = records_last_30d.first().unwrap();
+                        @let (msg, color) = result_to_text_color(&last_record.result);
+                        @let last_different_status = records.iter().find(|r| r.result != last_record.result);
+                        @let status_since = if let Some(ds) = last_different_status {
+                            ds.time_checked
+                        } else {
+                            records.last().unwrap().time_checked
+                        };
+                        td { span style={ "color:" (color) } { (msg) } " since " (time_util::time_diff_now(status_since as _)) }
+                        td { (last_record.response_time_ms.unwrap_or_default()) "ms" }
+                    }
+                }
+                
+                // 24h
+                tr {
+                    th scope="row" { "Last 24h" }
+                    @let records_last_24h = records_last_30d.iter().filter(|r| r.time_checked > time - 60 * 60 * 24).collect::<Vec<&&MonitorRecord>>();
+                    
+                    @let (amount_ok, amount_ux, amount_down, amount_err) = records_last_24h.iter().fold((0f32, 0f32, 0f32, 0f32), |mut amounts, r| {
+                        match r.result {
+                            RecordResult::Ok => amounts.0 += 1.,
+                            RecordResult::Unexpected => amounts.1 += 1.,
+                            RecordResult::Down => amounts.2 += 1.,
+                            RecordResult::Err => amounts.3 += 1.,
+                        };
+
+                        amounts
+                    });
+
+                    @let perc_ok = amount_ok / records_last_24h.len() as f32 * 100.;
+                    @let perc_ux = amount_ux / records_last_24h.len() as f32 * 100.;
+                    @let perc_down = amount_down / records_last_24h.len() as f32 * 100.;
+                    @let perc_err = amount_err / records_last_24h.len() as f32 * 100.;
+
+                    @let mut statuses: Vec<String> = vec![];
+                    @for (s, p) in vec![
+                        (RecordResult::Ok, perc_ok),
+                        (RecordResult::Unexpected, perc_ux),
+                        (RecordResult::Down, perc_down),
+                        (RecordResult::Err, perc_err),
+                    ] {
+                        @if p > 0. {
+                            @let (msg, color) = result_to_text_color(&s);
+                            @let _ = statuses.push(html!(span style={ "color:" (color) } { (p) "% " (msg) }).into_string());
+                        }
+                    }
+
+                    td { (PreEscaped(statuses.join(" "))) }
+
+                    @let response_times = records_last_24h.iter().filter_map(|r| r.response_time_ms).collect::<Vec<u64>>();
+                    @if response_times.is_empty() {
+                        td { "N/A" }
+                    } @else {
+                        @let lowest_response_time = response_times.iter().min().unwrap();
+                        @let highest_response_time = response_times.iter().max().unwrap();
+                        @let avg_response_time = response_times.iter().sum::<u64>() as f32 / records_last_24h.len() as f32;
+
+                        td { "L: " (lowest_response_time) "ms H: " (highest_response_time) "ms Avg: " (avg_response_time) "ms" }
                     }
                 }
             }
@@ -355,6 +445,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
         let render = html!(
             head {
                 (NEWCSS)
+                title { "Not found" }
             }
 
             body {
@@ -369,7 +460,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
     let render = html!(
         head {
             (NEWCSS)
-            @if can_view { title { "Monitor " (monitor_id.to_string()) } }
+            @if can_view { title { "Monitor " (*monitor_id) } }
             @else { title { "Unauthorized" } }
         }
 
@@ -384,7 +475,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
 
                 h1 { "Monitor info: " (mon_name) }
             }
-            (render_monitor_info(monitor).await)
+            (render_monitor_info(monitor, *monitor_id).await)
         }
         @else {
             header { h1 { "Unauthorized" } }
