@@ -1,14 +1,17 @@
 use itertools::Itertools;
 use maud::{html, Markup, PreEscaped};
 
-use crate::{database::{self, record::RecordResult}, time_util};
+use crate::{
+    database::{self, record::RecordResult},
+    time_util,
+};
 
-mod index;
 mod admin;
+mod index;
 mod monitor;
 
-pub use index::index_template;
 pub use admin::admin_template;
+pub use index::index_template;
 pub use monitor::monitor_template;
 
 #[rustfmt::skip]

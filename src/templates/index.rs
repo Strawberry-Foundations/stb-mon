@@ -2,7 +2,11 @@ use axum_extra::extract::CookieJar;
 use maud::{html, Markup, DOCTYPE};
 use reqwest::StatusCode;
 
-use crate::{config::CONFIG, database, templates::{render_monitor_list, NEWCSS}};
+use crate::{
+    config::CONFIG,
+    database,
+    templates::{render_monitor_list, NEWCSS},
+};
 
 pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
     let is_logged_in = match cookies.get("token") {
