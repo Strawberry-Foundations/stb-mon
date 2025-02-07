@@ -89,7 +89,7 @@ pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
 pub async fn records_from_mon(mon_id: u64) -> anyhow::Result<Vec<MonitorRecord>> {
     let lock = DATABASE.lock().await;
     let mut stmt = lock
-        .prepare(&format!("SELECT monitorId, result, responseDeltaMs, checkedAt, info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC"))?;
+        .prepare("SELECT monitorId, result, responseDeltaMs, checkedAt, info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC")?;
 
     let records: Vec<MonitorRecord> = stmt
         .query(params![mon_id])?
