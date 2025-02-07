@@ -90,7 +90,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
 
                 @let first_record_time = records_last_30d.last().unwrap().time_checked;
                 @for (timespan, t) in vec![
-                    ("4m", 60 * 60 * 4),
+                    ("4h", 60 * 60 * 4),
                     ("12h", 60 * 60 * 12),
                     ("24h", 60 * 60 * 24),
                     ("72h", 60 * 60 * 72),
