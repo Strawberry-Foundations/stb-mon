@@ -34,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(templates::index_template))
         .route("/admin", get(templates::admin_template))
+        .route("/monitor/{id}", get(templates::monitor_template))
         .route("/favicon.ico", get(routes::favicon_route))
         .route("/index.js", get(routes::indexjs_route))
         .route("/admin.js", get(routes::adminjs_route))

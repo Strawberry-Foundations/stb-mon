@@ -1,8 +1,9 @@
 use crate::time_util::current_unix_time;
-use rusqlite::params;
+use rusqlite::{fallible_iterator::FallibleIterator, params};
 
 use super::DATABASE;
 
+#[derive(Debug)]
 pub struct MonitorRecord {
     pub time_checked: u64,
     pub result: RecordResult,
@@ -13,7 +14,7 @@ pub struct MonitorRecord {
     pub info: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[repr(u8)]
 pub enum RecordResult {
     Ok,
@@ -56,7 +57,7 @@ pub async fn add(
 }
 
 pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
-    Ok(DATABASE
+    let last_record = DATABASE
         .lock()
         .await
         .query_row(
@@ -77,8 +78,41 @@ pub async fn util_last_record(mon_id: u64) -> anyhow::Result<MonitorRecord> {
                     monitor_id,
                     info
                 };
-                // meow to fix cargo fmt internal error
+
                 Ok(rec)
             },
-        )?)
+        )?;
+
+    Ok(last_record)
+}
+
+pub async fn records_from_mon(mon_id: u64) -> anyhow::Result<Vec<MonitorRecord>> {
+    let lock = DATABASE.lock().await;
+    let mut stmt = lock
+        .prepare(&format!("SELECT monitorId, result, responseDeltaMs, checkedAt, info FROM records WHERE monitorId = ? ORDER BY checkedAt DESC"))?;
+
+    let records: Vec<MonitorRecord> = stmt
+        .query(params![mon_id])?
+        .map(|r| {
+            let monitor_id: u64 = r.get(0).unwrap();
+            let result: u8 = r.get(1).unwrap();
+            let result = RecordResult::from(result);
+            let response_time_ms: Option<u64> = r.get(2).unwrap();
+            let time_checked: u64 = r.get(3).unwrap();
+            let info: String = r.get(4).unwrap();
+
+            let rec = MonitorRecord {
+                time_checked,
+                result,
+                response_time_ms,
+                monitor_id,
+                info,
+            };
+
+            Ok(rec)
+        })
+        .collect()
+        .unwrap();
+
+    Ok(records)
 }

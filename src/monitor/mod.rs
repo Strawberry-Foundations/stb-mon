@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, time::Duration};
 
 use http::HttpRequest;
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,7 @@ pub struct Monitor {
     pub service_name: String,
     pub interval_mins: u64,
     pub enabled: bool,
+    pub timeout_secs: u16,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -19,13 +20,11 @@ pub enum MonitorData {
     Tcp {
         addr: SocketAddr,
         expected: tcp::TcpExpectedResponse,
-        timeout: Duration,
     },
     Http {
         url: String, // url validity verified at creation time
         request: HttpRequest,
         expected: http::HttpExpectedResponse,
-        timeout: Duration,
     },
 }
 
@@ -49,19 +48,19 @@ pub enum MonitorResult {
 
 impl MonitorData {
     // Running a service will execute the logic of the service and put its results into the database
-    pub async fn run(&self) -> MonitorResult {
+    pub async fn run(&self, timeout_s: u16) -> MonitorResult {
         match self {
-            Self::Tcp {
-                addr,
-                expected,
-                timeout,
-            } => tcp::tcp_service(addr, expected, *timeout).await,
+            Self::Tcp { addr, expected } => {
+                tcp::tcp_service(addr, expected, Duration::from_secs(timeout_s as _)).await
+            }
             Self::Http {
                 url,
                 expected,
-                timeout,
                 request,
-            } => http::http_service(url, expected, *timeout, request).await,
+            } => {
+                http::http_service(url, expected, Duration::from_secs(timeout_s as _), request)
+                    .await
+            }
         }
     }
 
@@ -72,5 +71,33 @@ impl MonitorData {
             }
             Self::Http { url, .. } => url.to_string(),
         }
+    }
+
+    pub fn as_hashmap(&self) -> HashMap<String, String> {
+        let mut hm = HashMap::new();
+        match self {
+            Self::Tcp { addr, expected } => {
+                hm.insert("Socket Address".to_string(), addr.to_string());
+                hm.insert("Expected Response".to_string(), format!("{expected:?}"));
+            }
+            Self::Http {
+                url,
+                request,
+                expected,
+            } => {
+                hm.insert("URL".to_string(), url.to_string());
+                hm.insert("Method".to_string(), format!("{:?}", request.method));
+                hm.insert(
+                    "Headers".to_string(),
+                    format!("{:?}", request.headers.to_reqwest().unwrap()),
+                );
+                let body = String::from_utf8(request.body.clone())
+                    .unwrap_or_else(|_| "binary".to_string());
+                hm.insert("Body".to_string(), body);
+                hm.insert("Expected response".to_string(), format!("{expected:?}"));
+            }
+        };
+
+        hm
     }
 }

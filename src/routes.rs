@@ -26,6 +26,6 @@ pub async fn adminjs_route() -> (HeaderMap, String) {
         HeaderValue::from_str("text/javascript").unwrap(),
     )]);
     let script = include_str!("../static/admin.js").to_string();
-    
+
     (hm, script)
 }

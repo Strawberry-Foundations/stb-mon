@@ -20,7 +20,8 @@ lazy_static! {
             serviceDataMp BLOB NOT NULL,
             intervalMins INTEGER NOT NULL,
             enabled BOOLEAN DEFAULT 1,
-            serviceName VARCHAR NOT NULL
+            serviceName VARCHAR NOT NULL,
+            timeoutSecs INTEGER NOT NULL
         )
         ",
                 [],
