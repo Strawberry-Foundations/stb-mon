@@ -17,7 +17,7 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
     };
 
     let allow_guest = CONFIG.get().unwrap().lock().await.allow_guest;
-    let can_view = allow_guest || (!allow_guest && is_logged_in);
+    let can_view = !(!allow_guest && !is_logged_in);
 
     let render = html! {
         (DOCTYPE);
