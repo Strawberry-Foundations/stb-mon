@@ -23,11 +23,6 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
         return html!(p { (format!("Internal server error")) });
     };
 
-    let records_last_30d = records
-        .iter()
-        .filter(|r| r.time_checked >= 60 * 60 * 24 * 30)
-        .collect::<Vec<&MonitorRecord>>();
-
     html!(
         div {
             style scoped { "th { width: 0; white-space: nowrap }" }
@@ -76,19 +71,26 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     }
                 }
 
+                @let first_record_time = records.last().unwrap().time_checked;
                 tr {
                     th scope="row" { "Current" }
-                    @let last_record = records_last_30d.first().unwrap();
+                    @let last_record = records.first().unwrap();
                     @let (msg, color) = result_to_text_color(&last_record.result);
-                    @let last_different_status = records.iter().find(|r| r.result != last_record.result);
+                    @let last_same_status = records
+                        .iter()
+                        .position(|r| r.result != last_record.result)
+                        .map(|i| records[i - 1].time_checked)
+                        .unwrap_or(first_record_time);
 
-                    @let status_since = last_different_status.map_or_else(|| records.last().unwrap().time_checked, |ds| ds.time_checked);
-
-                    td { span style={ "color:" (color) } { (msg) } " for " (time_util::time_diff_now(status_since as _)) }
+                    td { span style={ "color:" (color) } { (msg) } " for " (time_util::time_diff_now(last_same_status as _)) }
                     td { (last_record.response_time_ms.map(|n| n.to_string()).unwrap_or_else(|| "N/A ".to_string())) "ms" }
                 }
+                
+                @let records_last_30d = records
+                    .iter()
+                    .filter(|r| r.time_checked >= 60 * 60 * 24 * 30)
+                    .collect::<Vec<&MonitorRecord>>();
 
-                @let first_record_time = records_last_30d.last().unwrap().time_checked;
                 @for (timespan, t) in [
                     ("4h", 60 * 60 * 4),
                     ("12h", 60 * 60 * 12),
