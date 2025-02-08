@@ -5,7 +5,7 @@
 
 ## ⚠️ Development Status
 
-This project is currently under development and is **not** ready for production use.
+This project is currently under development and is **partially** ready for production use.
 
 ### Services
 - [x] TCP services
@@ -16,7 +16,8 @@ This project is currently under development and is **not** ready for production 
 ### Web UI
 - [x] Start page with status of all monitors
 - [x] Admin interface which allows you to add and manage monitors
-- [ ] Monitor page where you can see the history of a monitor
+- [x] Monitor page where you can see the uptime history of a monitor
+- [ ] Allow editing of monitor options
 
 ## What is this?
 
@@ -38,6 +39,7 @@ Strawberry Monitor aims to provide:
 - 🪶 **Lightweight**:
    - Uses SQLite as database
    - Low resource consumption (uses 15MB of memory)
+   - No client-side JS required for read-only
 - 📊 **Clarity**: Clean, minimal web interface built on [new.css](https://newcss.net)
 
 Perfect for small to medium infrastructures and developers seeking a straightforward monitoring solution.
