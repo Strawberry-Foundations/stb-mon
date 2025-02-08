@@ -60,10 +60,10 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
                             label for="service-name" { "Service name" }
                             input #service-name placeholder="e.g. Website, Blog";
 
-                            label for="interval" { "Check interval" }
+                            label for="interval" { "Check interval (in minutes)" }
                             input #interval type="number" placeholder="minutes" min="1" max="94080" value="10";
 
-                            label for="timeout" { "Timeout" }
+                            label for="timeout" { "Timeout (in seconds)" }
                             input #timeout type="number" placeholder="seconds" min="1" max="60" value="5";
 
                             br;
