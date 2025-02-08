@@ -21,7 +21,7 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
     }
 
     let mut codes = vec![];
-    let parts = val.split(",");
+    let parts = val.split(',');
     for part in parts {
         let n_hyp = part.chars().filter(|c| *c == '-').count();
         if n_hyp >= 2 {
@@ -39,7 +39,7 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
         }
 
         // range part (x-y)
-        let (start, end) = part.split_once("-").unwrap();
+        let (start, end) = part.split_once('-').unwrap();
         let (Ok(start), Ok(end)) = (start.parse::<u16>(), end.parse::<u16>()) else {
             return None;
         };
@@ -53,7 +53,7 @@ pub fn parse_codes(val: &str) -> Option<Vec<StatusCode>> {
         }
     }
 
-    let codes = codes.into_iter().filter_map(|r| r.ok()).collect();
+    let codes = codes.into_iter().filter_map(Result::ok).collect();
     Some(codes)
 }
 
@@ -112,7 +112,7 @@ impl HeaderHashMap {
         let lines = val.lines();
 
         for header in lines {
-            let (k, v) = header.split_once(":")?;
+            let (k, v) = header.split_once(':')?;
             headers.insert(k.trim().to_string(), v.trim().to_string());
         }
 

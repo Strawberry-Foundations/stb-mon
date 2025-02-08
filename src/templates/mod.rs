@@ -87,7 +87,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                         td { (mon.service_name) }
                         td {
                             @let loc = mon.service_data.service_location_str();
-                            @let tloc = loc.split_at_checked(126).map(|s| s.0).unwrap_or(&loc);
+                            @let tloc = loc.split_at_checked(126).map_or(loc.as_str(), |s| s.0);
                             @if loc.starts_with("http") {
                                 a href=(loc) { (tloc) }
                             }

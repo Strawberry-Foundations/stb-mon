@@ -82,11 +82,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     @let (msg, color) = result_to_text_color(&last_record.result);
                     @let last_different_status = records.iter().find(|r| r.result != last_record.result);
 
-                    @let status_since = if let Some(ds) = last_different_status {
-                        ds.time_checked
-                    } else {
-                        records.last().unwrap().time_checked
-                    };
+                    @let status_since = last_different_status.map_or_else(|| records.last().unwrap().time_checked, |ds| ds.time_checked);
 
                     td { span style={ "color:" (color) } { (msg) } " since " (time_util::time_diff_now(status_since as _)) }
                     td { (last_record.response_time_ms.unwrap_or_default()) "ms" }
@@ -131,7 +127,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                         ] {
                             @if p > 0. {
                                 @let (msg, color) = result_to_text_color(&s);
-                                @let _ = statuses.push(html!(span style={ "color:" (color) } { (format!("{p:.2}")) "% " (msg) }).into_string());
+                                @let () = statuses.push(html!(span style={ "color:" (color) } { (format!("{p:.2}")) "% " (msg) }).into_string());
                             }
                         }
 
@@ -200,7 +196,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
                     } else {
                         &monitor.service_name
                     };
-                    @let mon_name = mon_name.split_at_checked(24).map(|s| s.0).unwrap_or(mon_name);
+                    @let mon_name = mon_name.split_at_checked(24).map_or(mon_name.as_str(), |s| s.0);
 
                     h1 { "Monitor info: " (mon_name) }
                 }

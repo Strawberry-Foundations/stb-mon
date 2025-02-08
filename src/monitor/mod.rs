@@ -51,14 +51,14 @@ impl MonitorData {
     pub async fn run(&self, timeout_s: u16) -> MonitorResult {
         match self {
             Self::Tcp { addr, expected } => {
-                tcp::tcp_service(addr, expected, Duration::from_secs(timeout_s as _)).await
+                tcp::tcp_service(addr, expected, Duration::from_secs(timeout_s.into())).await
             }
             Self::Http {
                 url,
                 expected,
                 request,
             } => {
-                http::http_service(url, expected, Duration::from_secs(timeout_s as _), request)
+                http::http_service(url, expected, Duration::from_secs(timeout_s.into()), request)
                     .await
             }
         }

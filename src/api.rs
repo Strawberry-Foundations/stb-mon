@@ -94,7 +94,7 @@ pub async fn add_monitor_route(
         );
     }
 
-    let id = match q.get("ty").map(|s| s.as_str()) {
+    let id = match q.get("ty").map(String::as_str) {
         None => {
             return (
                 StatusCode::BAD_REQUEST,
@@ -109,7 +109,7 @@ pub async fn add_monitor_route(
                 );
             };
 
-            let expected_response = match q.get("exre").map(|s| s.as_str()) {
+            let expected_response = match q.get("exre").map(String::as_str) {
                 Some("op") => TcpExpectedResponse::OpenPort,
                 Some("bytes") => {
                     todo!()
@@ -158,7 +158,7 @@ pub async fn add_monitor_route(
             };
             let url = url.to_string();
 
-            let expected_response = match q.get("exre").map(|s| s.as_str()) {
+            let expected_response = match q.get("exre").map(String::as_str) {
                 Some("any") => HttpExpectedResponse::Any,
                 Some("sc") => {
                     let Some(codes) = q.get("co") else {
