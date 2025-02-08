@@ -84,7 +84,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
 
                     @let status_since = last_different_status.map_or_else(|| records.last().unwrap().time_checked, |ds| ds.time_checked);
 
-                    td { span style={ "color:" (color) } { (msg) } " since " (time_util::time_diff_now(status_since as _)) }
+                    td { span style={ "color:" (color) } { (msg) } " for " (time_util::time_diff_now(status_since as _)) }
                     td { (last_record.response_time_ms.unwrap_or_default()) "ms" }
                 }
 
