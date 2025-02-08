@@ -199,7 +199,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
 
                 header style="display: flex; align-items: center;" {
                     a href="/" {
-                        img src="/static/logo.png" style="height: 48px; width: 48px" alt="Logo";
+                        img.logo src="/static/logo.png" style="height: 48px; width: 48px" alt="Logo";
                     }
                     h1 style="margin-bottom: 16px; margin-left: 16px; padding: 16px" { "Monitor info: " (mon_name) }
                 }
