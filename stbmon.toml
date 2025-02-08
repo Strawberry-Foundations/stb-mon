@@ -1,9 +1,0 @@
-bind_addr = "0.0.0.0:13337"
-instance_name = "Strawberry Monitor"
-password_sha256 = "ba01338ba5fa0c1584a6d41f93fe550b1d715a8de2da10d6c673131a85658394" # CHANGEME
-allow_guest = true
-
-[http]
-5xx_status_code_down = true
-follow_redirects = false
-#max_follow_redirects = 10
