@@ -20,6 +20,8 @@ pub struct Config {
 pub struct ConfigHttp {
     #[serde(rename = "5xx_status_code_down")]
     pub fivexx_status_code_down: bool,
+    pub follow_redirects: bool,
+    pub max_follow_redirects: Option<u16>,
 }
 
 impl Config {
@@ -44,6 +46,10 @@ pub async fn init_config(path: String) -> anyhow::Result<()> {
 
     if config.password.len() != 256 / 4 || config.password.chars().any(|c| !c.is_ascii_hexdigit()) {
         bail!("Password is not a valid SHA256")
+    }
+
+    if config.http.follow_redirects && config.http.max_follow_redirects.is_none() {
+        bail!("max_follow_redirects must be set if follow_redirects is enabled");
     }
     
     CONFIG.set(Arc::new(Mutex::new(config))).unwrap();

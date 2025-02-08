@@ -5,3 +5,5 @@ allow_guest = true
 
 [http]
 5xx_status_code_down = true
+follow_redirects = false
+#max_follow_redirects = 10

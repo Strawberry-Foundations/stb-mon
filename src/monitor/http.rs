@@ -6,7 +6,7 @@ use std::{
 
 use adler32::adler32;
 use axum::http::{HeaderName, HeaderValue};
-use reqwest::StatusCode;
+use reqwest::{redirect::Policy, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::config::CONFIG;
@@ -168,8 +168,16 @@ pub async fn http_service(
     request_data: &HttpRequest,
 ) -> MonitorResult {
     let start_time = Instant::now();
-
-    let client = reqwest::Client::new();
+    let config = CONFIG.get().unwrap().lock().await;
+    let client = reqwest::ClientBuilder::new()
+        .redirect(if config.http.follow_redirects {
+            let limit = config.http.max_follow_redirects;
+            Policy::limited(limit.unwrap().into())
+        } else {
+            Policy::none()
+        })
+        .build()
+        .unwrap();
 
     let res = client
         .request(request_data.method.to_reqwest(), url)
@@ -189,14 +197,7 @@ pub async fn http_service(
         }
     };
 
-    if CONFIG
-        .get()
-        .unwrap()
-        .lock()
-        .await
-        .http
-        .fivexx_status_code_down
-        && (500..599).contains(&res.status().as_u16())
+    if config.http.fivexx_status_code_down && (500..599).contains(&res.status().as_u16())
     {
         return MonitorResult::Down(format!("Server replied with status {}", res.status()));
     }
