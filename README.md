@@ -61,8 +61,8 @@ Open the web UI by going to the address defined in `stbmon.toml` (default is `ht
 #### Main page
 ![The stb-mon main page](https://raw.githubusercontent.com/Strawberry-Foundations/stb-mon/refs/heads/main/screenshots/main-page.png)
 
-#### Main page
+#### Admin page
 ![The stb-mon admin page](https://raw.githubusercontent.com/Strawberry-Foundations/stb-mon/refs/heads/main/screenshots/admin.png)
 
-#### Main page
+#### Monitor Info page
 ![The stb-mon monitor info page](https://raw.githubusercontent.com/Strawberry-Foundations/stb-mon/refs/heads/main/screenshots/monitor-info.png)
