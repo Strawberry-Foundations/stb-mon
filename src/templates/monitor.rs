@@ -5,7 +5,7 @@ use crate::{
         record::{MonitorRecord, RecordResult},
     },
     monitor::Monitor,
-    templates::{result_to_text_color, NEWCSS},
+    templates::{result_to_text_color, HTML_HEADER_GLOB},
     time_util::{self, current_unix_time},
 };
 
@@ -167,7 +167,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
             (DOCTYPE)
             html {
                 head {
-                    (NEWCSS)
+                    (HTML_HEADER_GLOB)
                     title { "Not found" }
                 }
 
@@ -184,7 +184,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
     let render = html!(
         html {
             head {
-                (NEWCSS)
+                (HTML_HEADER_GLOB)
                 @if can_view { title { "Monitor " (*monitor_id) } }
                 @else { title { "Unauthorized" } }
             }

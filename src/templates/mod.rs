@@ -15,24 +15,14 @@ pub use index::index_template;
 pub use monitor::monitor_template;
 
 #[rustfmt::skip]
-static NEWCSS: PreEscaped<&'static str> = PreEscaped(concat!(
+static HTML_HEADER_GLOB: PreEscaped<&'static str> = PreEscaped(concat!(
 r#"<link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">"#,
 r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">"#,
 "<style>",
-    "body {",
-        "max-width: 65%;",
-    "}",
-
+    "body { max-width: 65%; }",
     "#addform {",
-        "input {",
-            "min-width: 30%;",
-            "display: block;",
-        "}",
-
-        "label {",
-            "margin-down: 3px;",
-            "display: block;",
-        "}",
+        "input { min-width: 30%; display: block; }",
+        "label { margin-down: 3px; display: block; }",
     "}",
 "</style>"
 ));

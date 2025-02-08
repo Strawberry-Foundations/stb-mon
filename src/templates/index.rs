@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use crate::{
     config::CONFIG,
     database,
-    templates::{render_monitor_list, NEWCSS},
+    templates::{render_monitor_list, HTML_HEADER_GLOB},
 };
 
 pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
@@ -23,7 +23,7 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
         (DOCTYPE);
         html {
             head {
-                (NEWCSS)
+                (HTML_HEADER_GLOB)
                 script src="/index.js" {};
                 title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }

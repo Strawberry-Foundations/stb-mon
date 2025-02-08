@@ -49,7 +49,20 @@ Perfect for small to medium infrastructures and developers seeking a straightfor
 - **Check**: Process of verifying service availability and response
 
 ## How to run
+
 It's really simple! Set up the config in `stbmon.toml` as you like, then run it with `cargo r -r`. The database is automatically created.
 
 ## How to use
+
 Open the web UI by going to the address defined in `stbmon.toml` (default is `http://127.0.0.1:13337`). From there, you can view your monitors, and after logging in with the password defined in the config, you can add, delete and edit monitors.
+
+## Screenshots
+
+#### Main page
+![The stb-mon main page](https://github.com/Strawberry-Foundations/stb-mon/raw/master/main-page.png)
+
+#### Main page
+![The stb-mon admin page](https://github.com/Strawberry-Foundations/stb-mon/raw/master/admin.png)
+
+#### Main page
+![The stb-mon monitor info page](https://github.com/Strawberry-Foundations/stb-mon/raw/master/monitor-info.png)

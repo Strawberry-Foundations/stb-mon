@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use crate::{
     config::CONFIG,
     database,
-    templates::{render_monitor_list, NEWCSS},
+    templates::{render_monitor_list, HTML_HEADER_GLOB},
 };
 
 pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
@@ -19,7 +19,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         let render = html!(
             (DOCTYPE)
             head {
-                (NEWCSS)
+                (HTML_HEADER_GLOB)
                 title { "Unauthorized" }
             }
 
@@ -37,7 +37,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         (DOCTYPE);
         html {
             head {
-                (NEWCSS);
+                (HTML_HEADER_GLOB);
                 script src="/admin.js" {};
                 title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
