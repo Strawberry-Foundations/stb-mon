@@ -185,12 +185,16 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
         html {
             head {
                 (HTML_HEADER_GLOB)
-                @if can_view { title { "Monitor " (*monitor_id) } }
+                @if can_view { title { (monitor.service_name) " - " (CONFIG.get().unwrap().lock().await.instance_name) } }
                 @else { title { "Unauthorized" } }
             }
 
             @if can_view {
-                header {
+                header style="display: flex; align-items: center;" {
+                    a href="/" {
+                        img src="/static/logo.png" style="height: 48px; width: 48px" alt="Logo";
+                    }
+
                     @let mon_name = if monitor.service_name.is_empty() {
                         &monitor.service_data.service_location_str()
                     } else {
@@ -198,7 +202,7 @@ pub async fn monitor_template(monitor_id: Path<u64>, cookies: CookieJar) -> (Sta
                     };
                     @let mon_name = mon_name.split_at_checked(24).map_or(mon_name.as_str(), |s| s.0);
 
-                    h1 { "Monitor info: " (mon_name) }
+                    h1 style="margin-bottom: 16px; margin-left: 16px; padding: 16px" { "Monitor info: " (mon_name) }
                 }
                 (render_monitor_info(monitor, *monitor_id).await)
             }

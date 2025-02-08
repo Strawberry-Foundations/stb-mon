@@ -39,12 +39,16 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
             head {
                 (HTML_HEADER_GLOB);
                 script src="/static/admin.js" {};
-                title { (CONFIG.get().unwrap().lock().await.instance_name) }
+                title { "Admin - " (CONFIG.get().unwrap().lock().await.instance_name) }
             }
 
             body {
-                header {
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) " - Admin" }
+                header style="display: flex; align-items: center;" {
+                    a href="/" {
+                        img src="/static/logo.png" style="height: 48px; width: 48px" alt="Logo";
+                    }
+                    
+                    h1 style="margin-bottom: 16px; margin-left: 16px; padding: 16px" { (CONFIG.get().unwrap().lock().await.instance_name) " - Admin" }
                 }
                 p {
                     (render_monitor_list(true).await)
