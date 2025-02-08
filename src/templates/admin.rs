@@ -38,7 +38,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
         html {
             head {
                 (HTML_HEADER_GLOB);
-                script src="/admin.js" {};
+                script src="/static/admin.js" {};
                 title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
 

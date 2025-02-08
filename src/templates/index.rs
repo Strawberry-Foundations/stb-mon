@@ -24,12 +24,13 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
         html {
             head {
                 (HTML_HEADER_GLOB)
-                script src="/index.js" {};
+                script src="/static/index.js" {};
                 title { (CONFIG.get().unwrap().lock().await.instance_name) }
             }
 
             body {
                 header {
+                    img src="/static/logo.png" style="height: 50px; width: 50px" alt="Logo";
                     h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
                     div style="position: absolute; top: 5px; right: 5px" {
                         @if !is_logged_in {
