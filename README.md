@@ -52,12 +52,12 @@ Perfect for small to medium infrastructures and developers seeking a straightfor
 
 ## How to run
 
-It's really simple! Set up the config in `stbmon.toml` as you like, then run it with `cargo run --release`. The database is automatically created.
+It's really simple! Set up the config in `stbmon.toml.example` as you like, rename it to `stbmom.toml` then run it with `cargo run --release`. The database is automatically created.
 Make sure that you have installed `libsqlite3-dev` (or similar) on your system.
 
 ## How to use
 
-Open the web UI by going to the address defined in `stbmon.toml` (default is `http://127.0.0.1:13337`). From there, you can view your monitors, and after logging in with the password defined in the config, you can add, delete and edit monitors.
+Open the web UI by going to the address defined in `stbmon.toml` (default is `http://0.0.0.0:13337`). From there, you can view your monitors, and after logging in with the password defined in the config, you can add, delete and edit monitors.
 
 ## Screenshots
 
