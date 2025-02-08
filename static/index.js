@@ -2,7 +2,8 @@ async function onLogin() {
     console.log();
     let password = document.getElementById("password");
     let res = await fetch(`/api/create_session?pw=${password.value}`, { method: "POST" });
-    if (res.status == 401) {
+
+    if (res.status === 401) {
         password.value = "";
         password.placeholder = "wrong password";
         return;
