@@ -29,9 +29,9 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
             }
 
             body {
-                header {
-                    img src="/static/logo.png" style="height: 50px; width: 50px" alt="Logo";
-                    h1 { (CONFIG.get().unwrap().lock().await.instance_name) }
+                header style="display: flex; align-items: center;" {
+                    img src="/static/logo.png" style="height: 48px; width: 48px" alt="Logo";
+                    h1 style="margin-bottom: 16px; margin-left: 16px; padding: 16px" { (CONFIG.get().unwrap().lock().await.instance_name) }
                     div style="position: absolute; top: 5px; right: 5px" {
                         @if !is_logged_in {
                             label for="password" { "Login: " }
