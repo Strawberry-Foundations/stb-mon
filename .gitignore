@@ -1,5 +1,5 @@
-.idea
-.code
+.idea/
+.code/
 
 target/
 stbmon.sqlite
