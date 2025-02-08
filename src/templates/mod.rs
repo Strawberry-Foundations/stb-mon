@@ -18,6 +18,7 @@ pub use monitor::monitor_template;
 static HTML_HEADER_GLOB: PreEscaped<&'static str> = PreEscaped(concat!(
 r#"<link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">"#,
 r#"<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">"#,
+r#"<link rel="shortcut icon" type="image/png" href="/static/favicon.png">"#,
 "<style>",
     "body { max-width: 65%; }",
     "#addform {",
