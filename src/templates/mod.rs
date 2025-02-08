@@ -25,7 +25,8 @@ r#"<link rel="shortcut icon" type="image/png" href="/static/favicon.png">"#,
         "input { min-width: 30%; display: block; }",
         "label { margin-down: 3px; display: block; }",
     "}",
-    ".logo { image-rendering: pixelated }",
+    ".logo { image-rendering: pixelated; margin-bottom: 0; height: 48px }",
+    "header { padding-top: 0.5rem; padding-bottom: 0.2rem; }",
 "</style>"
 ));
 
