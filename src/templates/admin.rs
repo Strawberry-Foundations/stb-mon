@@ -126,7 +126,7 @@ pub async fn admin_template(cookies: CookieJar) -> (StatusCode, Markup) {
                             };
                             br;
 
-                            input type="submit";
+                            input type="submit" value="Add";
                         }
                     }
                 }
