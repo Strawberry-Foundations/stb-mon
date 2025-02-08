@@ -3,5 +3,6 @@
 
 target/
 stbmon.sqlite
+stbmon.toml
 Cargo.lock
 *.profraw
