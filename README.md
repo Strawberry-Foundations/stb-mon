@@ -52,7 +52,8 @@ Perfect for small to medium infrastructures and developers seeking a straightfor
 
 ## How to run
 
-It's really simple! Set up the config in `stbmon.toml` as you like, then run it with `cargo r -r`. The database is automatically created.
+It's really simple! Set up the config in `stbmon.toml` as you like, then run it with `cargo run --release`. The database is automatically created.
+Make sure that you have installed `libsqlite3-dev` (or similar) on your system.
 
 ## How to use
 
