@@ -118,7 +118,6 @@ pub async fn records_from_mon(mon_id: u64) -> anyhow::Result<Vec<MonitorRecord>>
     Ok(records)
 }
 
-
 pub async fn util_add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
     match res {
         MonitorResult::Ok(response_time_ms, info) => {

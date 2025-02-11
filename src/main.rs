@@ -71,9 +71,11 @@ async fn main() -> anyhow::Result<()> {
 // create records for monitors with no records
 async fn fix_no_records() -> anyhow::Result<usize> {
     let lock = DATABASE.lock().await;
-    let mut stmt = lock.prepare("SELECT id FROM monitors WHERE id NOT IN (SELECT monitorId FROM records)")?;
+    let mut stmt =
+        lock.prepare("SELECT id FROM monitors WHERE id NOT IN (SELECT monitorId FROM records)")?;
 
-    let ids: Vec<u64> = stmt.query([])?
+    let ids: Vec<u64> = stmt
+        .query([])?
         .map(|r| Ok(r.get::<_, u64>(0).unwrap()))
         .collect()
         .unwrap();
@@ -87,7 +89,6 @@ async fn fix_no_records() -> anyhow::Result<usize> {
         let result = mon.service_data.run(mon.timeout_secs).await;
         database::record::util_add_result(result, id).await?;
         fixed += 1;
-
     }
 
     Ok(fixed)

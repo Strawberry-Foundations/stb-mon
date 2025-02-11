@@ -1,10 +1,5 @@
+use crate::database::{self, DATABASE};
 use crate::time_util::current_unix_time;
-use crate::{
-    database::{
-        self,
-        DATABASE,
-    },
-};
 
 use rusqlite::fallible_iterator::FallibleIterator;
 use std::collections::HashMap;
@@ -45,7 +40,9 @@ async fn run_pending_checks() {
         };
         if last_record + 60 * mon.interval_mins < now {
             let res = mon.service_data.run(mon.timeout_secs).await;
-            database::record::util_add_result(res, mon_id).await.unwrap();
+            database::record::util_add_result(res, mon_id)
+                .await
+                .unwrap();
         }
     }
 }
