@@ -6,6 +6,8 @@ use axum::{
     Router,
 };
 use checker::checker_thread;
+use database::DATABASE;
+use rusqlite::fallible_iterator::FallibleIterator;
 use std::env;
 
 mod api;
@@ -26,10 +28,18 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|| "./stbmon.toml".to_string());
 
     tracing::info!("Loading config");
-
     config::init_config(config_path)
         .await
         .context("Failed to initialize config")?;
+
+    tracing::debug!("Fixing monitors");
+    match fix_no_records().await {
+        Ok(fixed) if fixed > 0 => {
+            tracing::info!("Fixed {fixed} monitors!");
+        }
+        Err(e) => tracing::error!("Failed to fix monitors: {e}"),
+        _ => {}
+    };
 
     let app = Router::new()
         .route("/", get(templates::index_template))
@@ -56,4 +66,29 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
 
     Ok(())
+}
+
+// create records for monitors with no records
+async fn fix_no_records() -> anyhow::Result<usize> {
+    let lock = DATABASE.lock().await;
+    let mut stmt = lock.prepare("SELECT id FROM monitors WHERE id NOT IN (SELECT monitorId FROM records)")?;
+
+    let ids: Vec<u64> = stmt.query([])?
+        .map(|r| Ok(r.get::<_, u64>(0).unwrap()))
+        .collect()
+        .unwrap();
+    drop(stmt);
+    drop(lock);
+
+    let mut fixed = 0;
+    for id in ids {
+        tracing::debug!("Fixing monitor {id}");
+        let mon = database::monitor::get_by_id(id).await.unwrap();
+        let result = mon.service_data.run(mon.timeout_secs).await;
+        database::record::util_add_result(result, id).await?;
+        fixed += 1;
+
+    }
+
+    Ok(fixed)
 }

@@ -51,7 +51,7 @@ pub async fn init_config(path: String) -> anyhow::Result<()> {
     if config.http.follow_redirects && config.http.max_follow_redirects.is_none() {
         bail!("max_follow_redirects must be set if follow_redirects is enabled");
     }
-    
+
     CONFIG.set(Arc::new(Mutex::new(config))).unwrap();
 
     Ok(())

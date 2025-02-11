@@ -1,11 +1,9 @@
 use crate::time_util::current_unix_time;
 use crate::{
-    database,
     database::{
-        record::{self, RecordResult},
+        self,
         DATABASE,
     },
-    monitor::MonitorResult,
 };
 
 use rusqlite::fallible_iterator::FallibleIterator;
@@ -47,27 +45,8 @@ async fn run_pending_checks() {
         };
         if last_record + 60 * mon.interval_mins < now {
             let res = mon.service_data.run(mon.timeout_secs).await;
-            add_result(res, mon_id).await.unwrap();
+            database::record::util_add_result(res, mon_id).await.unwrap();
         }
-    }
-}
-
-pub async fn add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
-    match res {
-        MonitorResult::Ok(response_time_ms, info) => {
-            record::add(RecordResult::Ok, Some(response_time_ms as _), mon_id, info).await
-        }
-        MonitorResult::UnexpectedResponse(response_time_ms, info) => {
-            record::add(
-                RecordResult::Unexpected,
-                Some(response_time_ms as _),
-                mon_id,
-                info,
-            )
-            .await
-        }
-        MonitorResult::Down(info) => record::add(RecordResult::Down, None, mon_id, info).await,
-        MonitorResult::IoError(err) => record::add(RecordResult::Err, None, mon_id, err).await,
     }
 }
 

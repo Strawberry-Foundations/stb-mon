@@ -8,7 +8,7 @@ use std::iter::repeat_with;
 pub async fn create() -> anyhow::Result<String> {
     let token: String = repeat_with(fastrand::alphanumeric).take(12).collect();
     let mut hasher = Sha256::new();
-    
+
     hasher.update(&token);
 
     let hash = hex::encode(hasher.finalize());

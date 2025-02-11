@@ -191,14 +191,13 @@ pub async fn http_service(
         Ok(res) => res,
         Err(e) => {
             if e.is_timeout() {
-                return MonitorResult::Down(format!("Connection timed out: {:?}", e.source()));
+                return MonitorResult::Down(format!("Connection timed out: {:?}", e));
             }
             return MonitorResult::IoError(format!("reqwest threw error: {:?}", e.source()));
         }
     };
 
-    if config.http.fivexx_status_code_down && (500..599).contains(&res.status().as_u16())
-    {
+    if config.http.fivexx_status_code_down && (500..599).contains(&res.status().as_u16()) {
         return MonitorResult::Down(format!("Server replied with status {}", res.status()));
     }
 

@@ -20,7 +20,7 @@ pub async fn add(
 
     let service_data = rmp_serde::to_vec(&service_data)?;
     let db = DATABASE.lock().await;
-    
+
     db.execute(
         "INSERT INTO monitors (serviceDataMp, intervalMins, serviceName, timeoutSecs) VALUES (?, ?, ?, ?)",
         params![service_data, interval_mins, service_name, timeout_s],
@@ -68,13 +68,13 @@ pub async fn get_by_id(id: u64) -> Option<Monitor> {
 pub async fn get_all(enabled_only: bool) -> anyhow::Result<HashMap<u64, Monitor>> {
     let lock = DATABASE.lock().await;
     let mut stmt = lock.prepare(&format!(
-        "SELECT id, serviceDataMp, intervalMins, enabled, serviceName, timeoutSecs FROM monitors {}",
-        if enabled_only {
-            "WHERE enabled = 1"
-        } else {
-            ""
-        }
-    ))?;
+  "SELECT id, serviceDataMp, intervalMins, enabled, serviceName, timeoutSecs FROM monitors {}",
+  if enabled_only {
+   "WHERE enabled = 1"
+  } else {
+   ""
+  }
+ ))?;
     let res: HashMap<u64, Monitor> = stmt
         .query([])?
         .map(|r| {

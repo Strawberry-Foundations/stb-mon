@@ -67,7 +67,7 @@ async fn render_monitor_list(admin: bool) -> Markup {
                     @let Ok(last_record) = crate::database::record::util_last_record(id).await else {
                         continue;
                     };
-                    
+
                     @let background_color = match last_record.result {
                         RecordResult::Ok => "rgba(0, 0, 0, 0)",
                         RecordResult::Unexpected => "rgba(245, 204, 0, 0.1)",

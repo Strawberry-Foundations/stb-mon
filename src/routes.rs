@@ -1,8 +1,10 @@
-use axum::http::header::CONTENT_TYPE;
 use axum::extract::Path;
+use axum::http::header::CONTENT_TYPE;
 use axum::http::{HeaderMap, HeaderValue};
 
-pub async fn static_route(path: Path<String>) -> Result<(HeaderMap, Vec<u8>), axum::http::StatusCode> {
+pub async fn static_route(
+    path: Path<String>,
+) -> Result<(HeaderMap, Vec<u8>), axum::http::StatusCode> {
     let content = match path.as_str() {
         "favicon.png" => include_bytes!("../static/favicon.png").to_vec(),
         "index.js" => include_str!("../static/index.js").as_bytes().to_vec(),

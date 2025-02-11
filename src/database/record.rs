@@ -1,4 +1,4 @@
-use crate::time_util::current_unix_time;
+use crate::{monitor::MonitorResult, time_util::current_unix_time};
 use rusqlite::{fallible_iterator::FallibleIterator, params};
 
 use super::DATABASE;
@@ -116,4 +116,24 @@ pub async fn records_from_mon(mon_id: u64) -> anyhow::Result<Vec<MonitorRecord>>
         .unwrap();
 
     Ok(records)
+}
+
+
+pub async fn util_add_result(res: MonitorResult, mon_id: u64) -> anyhow::Result<()> {
+    match res {
+        MonitorResult::Ok(response_time_ms, info) => {
+            add(RecordResult::Ok, Some(response_time_ms as _), mon_id, info).await
+        }
+        MonitorResult::UnexpectedResponse(response_time_ms, info) => {
+            add(
+                RecordResult::Unexpected,
+                Some(response_time_ms as _),
+                mon_id,
+                info,
+            )
+            .await
+        }
+        MonitorResult::Down(info) => add(RecordResult::Down, None, mon_id, info).await,
+        MonitorResult::IoError(err) => add(RecordResult::Err, None, mon_id, err).await,
+    }
 }

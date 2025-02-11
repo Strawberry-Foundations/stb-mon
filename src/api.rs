@@ -9,7 +9,6 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 use url::Url;
 
 use crate::{
-    checker,
     config::CONFIG,
     database,
     monitor::{
@@ -302,7 +301,7 @@ pub async fn add_monitor_route(
 
     let mon = database::monitor::get_by_id(id).await.unwrap();
     let res = mon.service_data.run(mon.timeout_secs).await;
-    checker::add_result(res, id).await.unwrap();
+    database::record::util_add_result(res, id).await.unwrap();
 
     (StatusCode::CREATED, "Monitor was added".to_string())
 }

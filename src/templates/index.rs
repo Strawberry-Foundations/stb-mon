@@ -33,9 +33,9 @@ pub async fn index_template(cookies: CookieJar) -> (StatusCode, Markup) {
                     a href="/" {
                         img.logo src="/static/logo.png" alt="Logo";
                     }
-                    
+
                     h1 style="margin-bottom: 16px; margin-left: 16px; padding: 16px" { (CONFIG.get().unwrap().lock().await.instance_name) }
-                    
+
                     div style="position: absolute; top: 5px; right: 5px" {
                         @if !is_logged_in {
                             label for="password" { "Login: " }

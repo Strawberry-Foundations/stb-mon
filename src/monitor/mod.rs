@@ -58,8 +58,13 @@ impl MonitorData {
                 expected,
                 request,
             } => {
-                http::http_service(url, expected, Duration::from_secs(timeout_s.into()), request)
-                    .await
+                http::http_service(
+                    url,
+                    expected,
+                    Duration::from_secs(timeout_s.into()),
+                    request,
+                )
+                .await
             }
         }
     }

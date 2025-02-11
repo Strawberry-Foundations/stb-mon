@@ -85,7 +85,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                     td { span style={ "color:" (color) } { (msg) } " for " (time_util::time_diff_now(last_same_status as _)) }
                     td { (last_record.response_time_ms.map(|n| n.to_string()).unwrap_or_else(|| "N/A ".to_string())) "ms" }
                 }
-                
+
                 @let records_last_30d = records
                     .iter()
                     .filter(|r| r.time_checked >= 60 * 60 * 24 * 30)
@@ -136,7 +136,7 @@ async fn render_monitor_info(mon: Monitor, mon_id: u64) -> Markup {
                         td { (PreEscaped(statuses.join(" "))) }
 
                         @let response_times = records.iter().filter_map(|r| r.response_time_ms).collect::<Vec<u64>>();
-                        
+
                         @if response_times.is_empty() {
                             td { "N/A" }
                         } @else {
