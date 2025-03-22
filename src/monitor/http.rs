@@ -1,6 +1,8 @@
+use std::error::Error as _;
+use std::io::ErrorKind;
 use std::{
     collections::HashMap,
-    error::Error,
+    io::Error,
     time::{Duration, Instant},
 };
 
@@ -193,6 +195,22 @@ pub async fn http_service(
             if e.is_timeout() {
                 return MonitorResult::Down(format!("Connection timed out: {:?}", e));
             }
+
+            if let Some(Some(kind)) = e
+                .source()
+                .map(|s| s.downcast_ref::<Error>().map(Error::kind))
+            {
+                match kind {
+                    ErrorKind::ConnectionRefused => {
+                        return MonitorResult::Down("Server refused connection".to_string())
+                    }
+                    ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted => {
+                        return MonitorResult::Down("Server reset connection".to_string())
+                    }
+                    _ => {}
+                }
+            }
+
             return MonitorResult::IoError(format!("reqwest threw error: {:?}", e.source()));
         }
     };
